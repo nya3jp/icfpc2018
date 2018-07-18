@@ -24,8 +24,8 @@ git_repository(
 # glog (https://github.com/google/glog)
 git_repository(
     name = "com_github_google_glog",
-    commit = "8d7a107d68c127f3f494bb7807b796c8c5a97a82",
-    remote = "https://github.com/google/glog",
+    commit = "26459400f49850bda8e736882c6f22c2ce766761",
+    remote = "https://github.com/nya3jp/glog",
 )
 
 # gtest (https://github.com/google/googletest)
