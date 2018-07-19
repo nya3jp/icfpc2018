@@ -1,0 +1,12 @@
+Custom toolchain to workaround IntelliJ issue on macOS.
+https://github.com/bazelbuild/intellij/issues/109
+
+Use this toolchain by configuring your .bazelrc file. For example:
+
+  build --crosstool_top=//mac_intellij_toolchain:custom_toolchain
+
+BUILD and CROSSTOOL were copied from:
+https://github.com/bazelbuild/intellij/issues/109#issuecomment-339018198
+
+Other files were taken from bazel artifacts:
+cp -RL bazel-icfpc2018/external/local_config_cc mac_intellij_toolchain
