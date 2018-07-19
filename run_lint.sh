@@ -2,6 +2,6 @@
 
 set -e
 
-root_dir="$(dirname "$0")"
+cd "$(dirname "$0")"
 
-"$root_dir/venv_python.sh" -m pylint examples/
+./venv_python.sh -m pylint examples/
