@@ -1,4 +1,4 @@
-FROM debian:stretch
+FROM ubuntu:18.04
 
 RUN apt-get update && \
     apt-get install -y wget build-essential unzip && \
@@ -11,7 +11,7 @@ RUN cd /tmp && \
     rm bazel-0.15.2-installer-linux-x86_64.sh
 
 RUN apt-get update && \
-    apt-get install -y cmake pkg-config zip g++ zlib1g-dev unzip python && \
+    apt-get install -y cmake pkg-config zip g++ zlib1g-dev unzip python python3 && \
     apt-get clean
 
 RUN useradd build && \
