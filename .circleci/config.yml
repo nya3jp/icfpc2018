@@ -11,3 +11,7 @@ jobs:
       - run:
           name: Test
           command: bazel test ...
+      - run:
+          name: Lint
+          # Ignore lint errors for now.
+          command: ./run_lint.sh || true

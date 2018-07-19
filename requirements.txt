@@ -1,0 +1,2 @@
+# All Python dependencies must be listed here.
+pylint==2.0.0
