@@ -7,10 +7,10 @@ Team CalmDownDear(仮)
 Members
 -------
 
-- @lennmars
-- @nu4nu
-- @nya3jp
-- @ytsmiling
+- [@lennmars](https://github.com/lennmars)
+- [@nu4nu](https://github.com/nu4nu)
+- [@nya3jp](https://github.com/nya3jp)
+- [@ytsmiling](https://github.com/ytsmiling)
 
 
 How to Build and Run
@@ -26,10 +26,19 @@ After prerequisites are installed, our solution can be built and run by:
 TODO(all): Update this
 ```
 
+
 Notes for Team Members
 ----------------------
 
-### Command Examples
+### Python virtualenv
+
+In CI environment, Python interpreter is launched with `venv_python.sh` which
+automatically creates a virtualenv at `.venv/` and installs dependencies in
+`requirements.txt`. If you want to use third-party libraries, please add them
+to `requirements.txt`.
+
+
+### Bazel Command Examples
 
 Example codes are in `examples` directory.
 
