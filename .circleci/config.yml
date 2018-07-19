@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: nya3jp/calmdowndear-ci
+    steps:
+      - checkout
+      - run:
+          name: Build
+          command: bazel build ...
+      - run:
+          name: Test
+          command: bazel test ...
