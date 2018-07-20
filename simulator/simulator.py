@@ -103,6 +103,14 @@ class FusionS(Command):
         self.nd = nd
 
 
+class Error(Exception):
+    pass
+
+
+class CommandError(Error):
+    pass
+
+
 class State():
 
     def __init__(self, resolution: int):
@@ -139,8 +147,18 @@ class State():
         p_disjoint_seeds = len(set_acc) == len_acc
         p_no_bid_in_seeds = all([i not in set_acc for i in bids])
 
+    def find_bot(self, bid):
+        for b in self.bots:
+            if b.bid == bid:
+                return b
+        assert False, bid
+
     def get_volatile_coordinates(self, bid: int, command: Command):
-        raise NotImplementedError
+        bot = self.find_bot(bid)
+        if isinstance(command, (Halt, Wait, Flip)):
+            return [bot.pos]
+        else:
+            raise NotImplementedError
 
     def set_trace(self, trace: List[Command]):
         raise NotImplementedError
