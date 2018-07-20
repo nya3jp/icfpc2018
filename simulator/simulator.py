@@ -168,7 +168,44 @@ class State():
 
 
 def is_grounded(matrix):
-    raise NotImplementedError
+    grounded = np.zeros_like(matrix, dtype=np.bool)
+    nx, ny, nz = matrix.shape
+
+    def neighbor_full_voxels(x, y, z):
+        neighbors = [(x - 1, y, z),
+                     (x + 1, y, z),
+                     (x, y - 1, z),
+                     (x, y + 1, z),
+                     (x, y, z - 1),
+                     (x, y, z + 1)]
+
+        def valid(x, y, z):
+            return (0 <= x < nx and
+                    0 <= y < ny and
+                    0 <= z < nz and
+                    matrix[x, y, z] != 0 and
+                    not grounded[x, y, z])
+
+        return [n for n in neighbors if valid(*n)]
+
+    # Init: y = 0 => grounded.
+    xs, zs = np.where(matrix[:, 0, :] != 0)
+    grounded[xs, 0, zs] = True
+    last_grounded = []
+    for x, z in zip(xs, zs):
+        last_grounded.append((x, 0, z))
+    # BFS.
+    while last_grounded != []:
+        last_grounded_next = []
+        for x, y, z in last_grounded:
+            ns = neighbor_full_voxels(x, y, z)
+            for n in ns:
+                grounded[n] = True
+                last_grounded_next.append(n)
+        last_grounded = last_grounded_next
+    mxs, mys, mzs = np.where(matrix != 0)
+    gxs, gys, gzs = np.where(grounded)
+    return np.all(mxs == gxs) and np.all(mys == gys) and np.all(mzs == gzs)
 
 
 def main():
