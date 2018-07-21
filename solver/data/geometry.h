@@ -16,7 +16,7 @@ enum class Axis {
 struct Delta {
   int dx, dy, dz;
 
-  Delta(int dx = 0, int dy = 0, int dz = 0) : dx(dx), dy(dy), dz(dz) {}
+  explicit Delta(int dx = 0, int dy = 0, int dz = 0) : dx(dx), dy(dy), dz(dz) {}
 };
 
 constexpr int SHORT_LEN = 5;
@@ -26,6 +26,9 @@ constexpr int LONG_LEN = 15;
 struct LinearDelta {
   Axis axis;
   int delta;
+
+  explicit LinearDelta(Axis axis = Axis::X, int delta = 0)
+      : axis(axis), delta(delta) {}
 
   Delta ToDelta() const {
     switch (axis) {
@@ -50,7 +53,7 @@ struct LinearDelta {
 struct Point {
   int x, y, z;
 
-  Point(int x = 0, int y = 0, int z = 0) : x(x), y(y), z(z) {}
+  explicit Point(int x = 0, int y = 0, int z = 0) : x(x), y(y), z(z) {}
 
   const inline bool IsOrigin() {
     return x == 0 && y == 0 && z == 0;
