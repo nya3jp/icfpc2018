@@ -10,7 +10,7 @@ ROOT_DIR = os.path.dirname(__file__)
 
 
 def _run_simulator(model_path, trace_path):
-    simulator_path = os.path.join(ROOT_DIR, 'reference_simulator', 'simulator')
+    simulator_path = os.path.join(ROOT_DIR, 'bazel-bin', 'cxx_simulator', 'sim')
     model_filter = '| gzip -d' if model_path.endswith('.gz') else ''
     trace_filter = '| gzip -d' if trace_path.endswith('.gz') else ''
     cmd = '"$0" <(cat "$1" %s) <(cat "$2" %s)' % (model_filter, trace_filter)
