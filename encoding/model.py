@@ -1,3 +1,4 @@
+import gzip
 import math
 import numpy as np
 
@@ -17,8 +18,12 @@ class Model:
         return self.matrix[item]
 
     @classmethod
-    def decode_model(cls, path):
-        with open(path, 'rb') as bf:
+    def decode_model(cls, path, from_gzip=False):
+        if from_gzip:
+            opener = gzip.open
+        else:
+            opener = open
+        with opener(path, 'rb') as bf:
             bf.seek(0)
             data = np.frombuffer(bf.read(), dtype=np.uint8)
         resolution = data[0]
