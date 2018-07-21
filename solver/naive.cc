@@ -9,9 +9,9 @@
 #include "gflags/gflags.h"
 #include "glog/logging.h"
 
-#include "solver/geometry.h"
-#include "solver/model.h"
-#include "solver/trace_writer.h"
+#include "solver/data/geometry.h"
+#include "solver/data/model.h"
+#include "solver/io/trace_writer.h"
 
 DEFINE_string(model, "", "Path to input model file");
 DEFINE_string(trace, "", "Path to output trace file");

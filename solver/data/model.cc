@@ -1,4 +1,4 @@
-#include "solver/model.h"
+#include "solver/data/model.h"
 
 #include <stdint.h>
 

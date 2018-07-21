@@ -1,4 +1,4 @@
-#include "solver/trace_writer.h"
+#include "solver/io/trace_writer.h"
 
 void TraceWriter::Halt() {
   WriteByte(0b11111111);

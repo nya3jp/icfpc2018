@@ -1,5 +1,5 @@
-#ifndef SOLVER_MODEL_H
-#define SOLVER_MODEL_H
+#ifndef SOLVER_DATA_MODEL_H
+#define SOLVER_DATA_MODEL_H
 
 #include <iostream>
 #include <memory>
@@ -24,4 +24,4 @@ class Model {
   std::vector<bool> data_;
 };
 
-#endif // SOLVER_MODEL_H
+#endif // SOLVER_DATA_MODEL_H

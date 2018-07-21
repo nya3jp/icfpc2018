@@ -1,11 +1,11 @@
-#ifndef SOLVER_TRACE_WRITER_H
-#define SOLVER_TRACE_WRITER_H
+#ifndef SOLVER_IO_TRACE_WRITER_H
+#define SOLVER_IO_TRACE_WRITER_H
 
 #include <stdint.h>
 
 #include <iostream>
 
-#include "solver/geometry.h"
+#include "solver/data/geometry.h"
 
 class TraceWriter {
  public:
@@ -24,4 +24,4 @@ class TraceWriter {
   std::ostream& os_;
 };
 
-#endif // SOLVER_TRACE_WRITER_H
+#endif // SOLVER_IO_TRACE_WRITER_H
