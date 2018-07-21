@@ -26,13 +26,34 @@ function init() {
     document.body.appendChild(renderer.domElement);
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-    const geometry = new THREE.BoxGeometry(50, 50, 50);
-    const material = new THREE.MeshStandardMaterial({color: 0x0000FF});
+    const geometry_box = new THREE.BoxGeometry(50, 50, 50);
+    const material_box = new THREE.MeshStandardMaterial({color: 0x0000FF});
 
-    for (var i = 0; i < coordinates.length; i++) {
-        const box = new THREE.Mesh(geometry, material);
-        box.position.set(coordinates[i][0], coordinates[i][1], coordinates[i][2]);
+    // Draw boxes.
+    for (var i = 0; i < coordinates_box.length; i++) {
+        const box = new THREE.Mesh(geometry_box, material_box);
+        c = coordinates_box[i]
+        box.position.set(c[0], c[1], c[2]);
         scene.add(box);
+    }
+
+    // Draw grid lines.
+    var material_line = new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.2
+    });
+
+    for (var i = 0; i < coordinates_line.length; i++) {
+        var geometry_line = new THREE.Geometry();
+        c0 = coordinates_line[i][0]
+        c1 = coordinates_line[i][1]
+        geometry_line.vertices.push(
+            new THREE.Vector3(c0[0], c0[1], c0[2]),
+            new THREE.Vector3(c1[0], c1[1], c1[2])
+        );
+        var line = new THREE.Line(geometry_line, material_line);
+        scene.add(line);
     }
 
     const light1 = new THREE.DirectionalLight(0xFFFFFF);
