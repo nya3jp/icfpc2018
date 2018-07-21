@@ -149,7 +149,11 @@ struct Matrix{
   int N;
   int nfloat = 0;
   std::vector<std::vector<std::vector<int8_t> > > field;
+  Matrix() = default;
   explicit Matrix(int resolution): N(resolution){
+    resize();
+  }
+  void resize(){
     field.resize(N);
     for(auto& x : field){
       x.resize(N);
@@ -177,7 +181,7 @@ struct Matrix{
       field[c.x][c.y][c.z] = 1;
       bfs(c);
     }else{
-      field[c.x][c.y][c.z] = -1;
+      field[c.x][c.y][c.z] = 1;  // should be -1 after implementing union find
       // ++nfloat;  // TODO: implement bfs
     }
     return true;
@@ -188,6 +192,42 @@ struct Matrix{
   void bfs(Coordinate& c){
     // TODO
   }
+  bool load(const char *filename){
+    std::ifstream mdl;
+    mdl.open(filename, std::ios::in | std::ios::binary);
+    if(!mdl){
+      std::cerr << filename << " cannot be opened" << std::endl;
+      return false;
+    }
+    uint8_t resolution;
+    mdl.read((char *)&resolution, 1);
+    N = resolution;
+    resize();
+    uint8_t data;
+    uint8_t pos = 0;
+    for(auto& yz : field){
+      for(auto& z : yz){
+        for(auto&& pixel : z){
+          if(pos == 0){
+            mdl.read((char *)&data, 1);
+            if(mdl.eof()){
+              std::cerr << "not enough data in model" << std::endl;
+              return false;
+            }
+          }
+          pixel = (data >> pos) & 1;
+          pos = (pos + 1) % 8;
+        }
+      }
+    }
+    mdl.read((char *)&data, 1);
+    if(!mdl.eof()){
+      std::cerr << "data remains in model" << std::endl;
+    }
+    mdl.close();
+    return true;
+  }
+  // for debug
   void dump(const char *filename){
     std::ofstream mdl;
     mdl.open(filename, std::ios::out | std::ios::binary);
@@ -240,7 +280,7 @@ struct State{
       step();
       ++nsteps;
     }
-    std::cout << "time = " << nsteps << ", energy = " << _energy << std::endl;
+    std::cout << nsteps << " " << _energy << std::endl;
   }
   void step(){
     int nbots = _bots.size();
@@ -363,20 +403,22 @@ struct State{
 };
 
 int main(int argc, char *argv[]){
-  if(argc < 4){
-    std::cerr << "Usage: " << argv[0] << " <in-mdl> <nbt> <out-mdl>" << std::endl;
-    return 0;
+  if(argc < 3){
+    std::cerr << "Usage: " << argv[0] << " <mdl> <nbt>" << std::endl;
+    return 1;
   }
-  std::ifstream mdl, nbt;
-  mdl.open(argv[1], std::ios::in | std::ios::binary);
+
+  Matrix ref;
+  if(!ref.load(argv[1])){
+    return 1;
+  }
+
+  std::ifstream nbt;
   nbt.open(argv[2], std::ios::in | std::ios::binary);
-  if(!mdl || !nbt){
+  if(!nbt){
     std::cerr << "cannot open files" << std::endl;
-    return 0;
+    return 1;
   }
-  uint8_t resolution;
-  mdl.read((char *)&resolution, 1);
-  mdl.close();
 
   std::queue<Command> trace;
   while(true){
@@ -448,7 +490,7 @@ int main(int argc, char *argv[]){
   // lightning config
   int energy = 0;
   bool harmonics = false;
-  Matrix m(resolution);
+  Matrix m(ref.N);
   std::priority_queue<Bot> bots;
   Seeds seeds;
   for(int i = 2; i < 21; ++i){
@@ -460,7 +502,10 @@ int main(int argc, char *argv[]){
 
   s.run();
 
-  s.mdump(argv[3]);
+  if(s._m.field != ref.field){
+    std::cerr << "generated object differs from reference" << std::endl;
+    return 1;
+  }
 
   return 0;
 }
