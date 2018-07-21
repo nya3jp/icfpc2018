@@ -5,6 +5,8 @@
 //   - Similar to above
 // - https://jsfiddle.net/prisoner849/vo1urg68/
 //   - Three.js example with slider
+// - https://codepen.io/dxinteractive/pen/reNpOR
+//   - Three.js with 2D HTML text labels
 
 window.addEventListener('DOMContentLoaded', init);
 
@@ -17,22 +19,26 @@ function init() {
     });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(width, height);
+    renderer.shadowMap.enabled = true;
 
     const scene = new THREE.Scene();
 
-    const camera = new THREE.PerspectiveCamera(45, width / height, 1, 10000);
-    camera.position.set(3000, 3000, 3000);
+    const camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, 1, 100000);
+    camera.position.set(5000, 5000, 5000);
 
     document.body.appendChild(renderer.domElement);
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-    const geometry_box = new THREE.BoxGeometry(50, 50, 50);
-    const material_box = new THREE.MeshStandardMaterial({color: 0x0000FF});
+    const box_size = 80;
+    const geometry_box = new THREE.BoxGeometry(box_size, box_size, box_size);
 
     // Draw boxes.
     for (var i = 0; i < coordinates_box.length; i++) {
-        const box = new THREE.Mesh(geometry_box, material_box);
         c = coordinates_box[i]
+        const material_box = new THREE.MeshStandardMaterial({color: c[3]});
+        const box = new THREE.Mesh(geometry_box, material_box);
+        box.castShadow = true;
+        box.receiveShadow = true;
         box.position.set(c[0], c[1], c[2]);
         scene.add(box);
     }
@@ -56,12 +62,14 @@ function init() {
         scene.add(line);
     }
 
-    const light1 = new THREE.DirectionalLight(0xFFFFFF);
-    const light2 = new THREE.DirectionalLight(0xFFFFFF);
+    const light1 = new THREE.PointLight();
+    const light2 = new THREE.PointLight();
+    //light1.castShadow = true;
+    //light2.castShadow = true;
     light1.intensity = 2;
     light2.intensity = 2;
-    light1.position.set(1, 1, 1);
-    light2.position.set(-1, -1, -1);
+    light1.position.set(0, 10000, 0);
+    light2.position.set(-10000, -10000, -10000);
     scene.add(light1);
     scene.add(light2);
 

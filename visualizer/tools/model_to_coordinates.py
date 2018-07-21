@@ -16,8 +16,10 @@ with open(out_path, 'w') as fp:
     # Draw boxes.
     print('coordinates_box = [', file=fp)
     for x, y, z in zip(xs, ys, zs):
-        xc, yc, zc = (p * mesh_size for p in (x, y, z))
-        print('    [{:d}, {:d}, {:d}],'.format(xc, yc, zc), file=fp)
+        xc, yc, zc = (p * mesh_size + mesh_size // 2 for p in (x, y, z))
+        r, g, b = (int(p / resolution * 256) for p in (x, y, z))
+        color = r * 0x10000 + g * 0x100 + b
+        print('    [{:d}, {:d}, {:d}, {:d}],'.format(xc, yc, zc, color), file=fp)
     print('];', file=fp)
     print(file=fp)
     # Draw grid.
