@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 
 import datetime
+import json
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+import traceback
 
 
 SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQ7Etsj7NXCN5thGthCvApancl5vni5SFsb1UoKgZQwTzXlrH7/exec'
+WEBHOOK_URL = 'https://hooks.slack.com/services/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'
+
+
+def _post_to_slack(msg):
+    subprocess.check_call([
+        'curl', '-X', 'POST',
+        '--data-urlencode', 'payload=%s' % json.dumps({'text': msg}),
+        WEBHOOK_URL,
+    ])
 
 
 def _real_main():
@@ -41,7 +52,7 @@ def _real_main():
     zip_url = base_url.rstrip('/') + '/' + os.path.basename(zip_path)
     print('URL:', zip_url)
 
-    subprocess.check_call([
+    output = subprocess.check_output([
         'curl',
         '-L',
         '--data-urlencode', 'action=submit',
@@ -51,12 +62,14 @@ def _real_main():
         SCRIPT_URL,
     ])
 
+    _post_to_slack(output.decode('utf-8'))
+
 
 def main():
     try:
         _real_main()
     except Exception:
-        # TODO(nya): Report errors
+        _post_to_slack('<!channel> ' + traceback.format_exc())
         raise
 
 
