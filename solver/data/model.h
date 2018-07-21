@@ -7,17 +7,17 @@
 
 class Model {
  public:
+  static std::unique_ptr<Model> FromStream(std::istream& is);
   Model(const Model& other) = delete;
 
-  static std::unique_ptr<Model> FromStream(std::istream& is);
-
   bool Get(int x, int y, int z) const;
-  int Resolution() const { return n_; }
+  int Resolution() const { return resolution_; }
 
  private:
-  Model(int n, std::vector<bool> data) : n_(n), data_(data) {}
+  Model(int resolution, std::vector<bool> data)
+      : resolution_(resolution), data_(std::move(data)) {}
 
-  int n_;
+  int resolution_;
   std::vector<bool> data_;
 };
 

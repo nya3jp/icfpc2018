@@ -6,8 +6,8 @@
 
 class CarelessController {
  public:
-  explicit CarelessController(TraceWriter* writer)
-      : writer_(writer), current_(0, 0, 0) {}
+  CarelessController(int resolution, TraceWriter* writer)
+      : resolution_(resolution), writer_(writer), current_(0, 0, 0) {}
   CarelessController(const CarelessController& other) = delete;
 
   void Halt();
@@ -19,6 +19,10 @@ class CarelessController {
   const Point& current() const { return current_; }
 
  private:
+
+  void VerifyCurrent() const;
+
+  const int resolution_;
   TraceWriter* const writer_;
 
   Point current_;

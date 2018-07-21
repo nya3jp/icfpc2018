@@ -20,7 +20,7 @@ DEFINE_string(trace, "", "Path to output trace file");
 class Solver {
  public:
   Solver(const Model* model, TraceWriter* writer)
-      : model_(model), controller_(writer) {}
+      : model_(model), controller_(model->Resolution(), writer) {}
   Solver(const Solver& other) = delete;
 
   void Solve();
