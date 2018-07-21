@@ -65,7 +65,7 @@ class Trace:
         self.commands.append((nd << 3) + 0b011)
 
     def encode(self, path):
-        data = np.asarray(self.commands).tobytes()
+        data = np.asarray(self.commands, dtype=np.uint8).tobytes()
         with open(path, 'wb') as wf:
             wf.write(data)
 
@@ -116,7 +116,7 @@ class Trace:
                 nd = (data[i] & 0b11111000) >> 3
                 print('Fill', Trace._decode_nd(nd), file=file)
             else:
-                raise ValueError('unrecognized command {0:b}'.format(command))
+                raise ValueError('unrecognized command {0:08b}'.format(data[i]))
 
     @staticmethod
     def _encode_ld(ld):
@@ -195,4 +195,3 @@ if __name__ == '__main__':
         trace.decode(path)
         with open(path[:-4] + '.txt', 'w') as wf:
             trace.debug_print(wf)
-
