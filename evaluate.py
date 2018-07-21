@@ -27,6 +27,8 @@ def main(argv):
     model_id = int(argv[1])
     trace_path = argv[2]
 
+    subprocess.check_call(['bazel', 'build', '//cxx_simulator:sim'], stderr=subprocess.DEVNULL)
+
     model_path = os.path.join(ROOT_DIR, 'data', 'models', 'LA%03d_tgt.mdl.gz' % model_id)
     best_trace_path = os.path.join(ROOT_DIR, 'data', 'traces', 'LA%03d.nbt.gz' % model_id)
     best_meta_path = os.path.join(ROOT_DIR, 'data', 'traces', 'LA%03d.json' % model_id)
