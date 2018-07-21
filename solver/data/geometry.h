@@ -1,25 +1,33 @@
 #ifndef SOLVER_DATA_GEOMETRY_H
 #define SOLVER_DATA_GEOMETRY_H
 
+#include <algorithm>
+
 #include "glog/logging.h"
 
+// Represents an axis.
 enum class Axis {
   X = 0,
   Y = 1,
   Z = 2,
 };
 
+// Represents a diff of two points.
 struct Delta {
   int dx, dy, dz;
 
   Delta(int dx = 0, int dy = 0, int dz = 0) : dx(dx), dy(dy), dz(dz) {}
 };
 
+constexpr int SHORT_LEN = 5;
+constexpr int LONG_LEN = 15;
+
+// Represents something like Delta but parallel to an axis.
 struct LinearDelta {
   Axis axis;
   int delta;
 
-  operator Delta() const {
+  Delta ToDelta() const {
     switch (axis) {
       case Axis::X:
         return Delta{delta, 0, 0};
@@ -29,8 +37,16 @@ struct LinearDelta {
         return Delta{0, 0, delta};
     }
   }
+
+  inline bool IsShort() const {
+    return std::abs(delta) <= SHORT_LEN;
+  }
+  inline bool IsLong() const {
+    return std::abs(delta) <= LONG_LEN;
+  }
 };
 
+// Represents a point in 3D space.
 struct Point {
   int x, y, z;
 
