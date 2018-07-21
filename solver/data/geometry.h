@@ -11,6 +11,8 @@ enum class Axis {
 
 struct Delta {
   int dx, dy, dz;
+
+  Delta(int dx = 0, int dy = 0, int dz = 0) : dx(dx), dy(dy), dz(dz) {}
 };
 
 struct LinearDelta {
@@ -29,44 +31,50 @@ struct LinearDelta {
   }
 };
 
-struct Point{
+struct Point {
   int x, y, z;
 
-  Point(int _x, int _y, int _z): x(_x), y(_y), z(_z){}
+  Point(int x = 0, int y = 0, int z = 0) : x(x), y(y), z(z) {}
 
-  const inline bool isorigin(){
+  const inline bool IsOrigin() {
     return x == 0 && y == 0 && z == 0;
   }
 
-  inline Point& operator+=(const Delta& o){
-    x += o.dx, y += o.dy, z += o.dz;
+  inline Point& operator+=(const Delta& o) {
+    x += o.dx;
+    y += o.dy;
+    z += o.dz;
     return *this;
   }
 
-  inline Point& operator-=(const Delta& o){
-    x -= o.dx, y -= o.dy, z -= o.dz;
+  inline Point& operator-=(const Delta& o) {
+    x -= o.dx;
+    y -= o.dy;
+    z -= o.dz;
     return *this;
   }
 
-  inline Point operator+(const Delta& o) const{
+  inline Point operator+(const Delta& o) const {
     return Point(*this) += o;
   }
 
-  inline Point operator-(const Delta& o) const{
+  inline Point operator-(const Delta& o) const {
     return Point(*this) -= o;
   }
 
-  inline Delta operator-(const Point& o) const{
+  inline Delta operator-(const Point& o) const {
     return Delta{x - o.x, y - o.y, z - o.z};
   }
 
   inline bool operator==(const Point& o) const {
     return x == o.x && y == o.y && z == o.z;
   }
+
   inline bool operator!=(const Point& o) const {
     return !(*this == o);
   }
-  inline bool operator<(const Point& o) const{
+
+  inline bool operator<(const Point& o) const {
     return x < o.x || (x == o.x && (y < o.y || (y == o.y && z < o.z)));
   }
 };
