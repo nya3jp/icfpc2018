@@ -235,9 +235,12 @@ struct State{
   void run(){
     int nsteps = 0;
     while(!_bots.empty()){
-      // std::cout << "step " << ++nsteps << std::endl;
+      _energy += (_harmonics ? 30 : 3) * _m.N * _m.N * _m.N;
+      _energy += 20 * _bots.size();
       step();
+      ++nsteps;
     }
+    std::cout << "time = " << nsteps << ", energy = " << _energy << std::endl;
   }
   void step(){
     int nbots = _bots.size();
@@ -272,6 +275,7 @@ struct State{
             throw std::runtime_error("move out of field");
           }
           vcs.emplace_back(vce);
+          _energy += 2 * std::abs(cmd.delta0.delta);
           break;
         }
 
@@ -287,6 +291,7 @@ struct State{
             throw std::runtime_error("move out of field");
           }
           vcs.emplace_back(vce);
+          _energy += 2 * (std::abs(cmd.delta0.delta) + 2 + std::abs(cmd.delta1.delta));
           break;
         }
 
@@ -294,10 +299,11 @@ struct State{
         {
           std::pair<VCE, Coordinate> res = bot.fill(cmd.delta2);
           vcs.emplace_back(res.first);
-          _m.fill(res.second);
+          bool filled = _m.fill(res.second);
           if(!_harmonics && _m.floating()){
             throw std::runtime_error("cannot place floating objects");
           }
+          _energy += filled ? 12 : 6;
           break;
         }
 
@@ -309,6 +315,7 @@ struct State{
           }
           vcs.emplace_back(res.first);
           newbots.push(res.second);
+          _energy += 24;
           break;
         }
 
@@ -323,6 +330,7 @@ struct State{
         {
           Coordinate spos = bot.fusion_pre(cmd.delta2);
           masters.insert(std::make_pair(std::make_pair(bot._pos, spos), bot));
+          _energy -= 24;
           break;
         }
 
