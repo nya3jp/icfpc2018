@@ -60,6 +60,12 @@ struct Point{
     return Delta{x - o.x, y - o.y, z - o.z};
   }
 
+  inline bool operator==(const Point& o) const {
+    return x == o.x && y == o.y && z == o.z;
+  }
+  inline bool operator!=(const Point& o) const {
+    return !(*this == o);
+  }
   inline bool operator<(const Point& o) const{
     return x < o.x || (x == o.x && (y < o.y || (y == o.y && z < o.z)));
   }

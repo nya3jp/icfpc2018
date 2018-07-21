@@ -12,38 +12,39 @@
 #include "solver/data/geometry.h"
 #include "solver/data/model.h"
 #include "solver/io/trace_writer.h"
+#include "solver/support/careless_controller.h"
 
 DEFINE_string(model, "", "Path to input model file");
 DEFINE_string(trace, "", "Path to output trace file");
 
 class Solver {
  public:
-  Solver(Model* const model, TraceWriter* writer)
-      : model_(model), writer_(writer), current_(0, 0, 0) {}
+  Solver(const Model* model, TraceWriter* writer)
+      : model_(model), controller_(writer) {}
   Solver(const Solver& other) = delete;
 
   void Solve();
 
  private:
-  void FreeMove(const Point& p);
+  const Point& Current() const;
 
   const Model* const model_;
-  TraceWriter* const writer_;
-
-  Point current_;
+  CarelessController controller_;
 };
 
 void Solver::Solve() {
   int n = model_->Resolution();
 
-  FreeMove(Point{0, 1, 0});
+  // Move up to y=1.
+  controller_.MoveTo(Point{0, 1, 0});
 
+  // Iterate y=1, 2, 3, ...
   for (;;) {
+    // Compute the bounding box in the current x-z plane.
     int min_x = n, min_z = n, max_x = -1, max_z = -1;
     for (int x = 0; x < n; ++x) {
       for (int z = 0; z < n; ++z) {
-        //LOG(ERROR) << x << " " << z;
-        if (model_->Get(x, current_.y - 1, z)) {
+        if (model_->Get(x, Current().y - 1, z)) {
           min_x = std::min(min_x, x);
           min_z = std::min(min_z, z);
           max_x = std::max(max_x, x);
@@ -51,75 +52,62 @@ void Solver::Solve() {
         }
       }
     }
+    // If no filled voxel in the current x-z plane, we're done.
     if (max_x == -1) {
       break;
     }
 
-    int init_x = std::abs(min_x - current_.x) < std::abs(max_x - current_.x) ? min_x : max_x;
-    int init_z = std::abs(min_z - current_.z) < std::abs(max_z - current_.z) ? min_z : max_z;
+    // Find the closest corner of the bounding box from the current position.
+    int init_x = std::abs(min_x - Current().x) < std::abs(max_x - Current().x) ? min_x : max_x;
+    int init_z = std::abs(min_z - Current().z) < std::abs(max_z - Current().z) ? min_z : max_z;
+
+    // Determine x-z sweep parameters.
     int move_x = init_x == min_x ? 1 : -1;
     int move_z = init_z == min_z ? 1 : -1;
     int from_z = init_z;
     int to_z = init_z == min_z ? max_z : min_z;
 
+    // Sweep the x-z plane.
     for (int x = init_x; min_x <= x && x <= max_x; x += move_x) {
       for (int z = from_z; min_z <= z && z <= max_z; z += move_z) {
-        if (model_->Get(x, current_.y - 1, z)) {
-          FreeMove(Point{x, current_.y, z});
-          writer_->Fill(Delta{0, -1, 0});
+        if (model_->Get(x, Current().y - 1, z)) {
+          controller_.MoveTo(Point{x, Current().y, z});
+          controller_.FillBelow();
         }
       }
+      // Alternate Z iteration order.
       std::swap(from_z, to_z);
       move_z *= -1;
     }
 
-    if (current_.y == n - 1) {
+    // Are we already at the top? Then it's done.
+    if (Current().y == n - 1) {
       break;
     }
-    FreeMove(Point{current_.x, current_.y + 1, current_.z});
-    if (current_.y == 2) {
-      writer_->Flip();
+
+    // Go upward.
+    controller_.MoveTo(Point{Current().x, Current().y + 1, Current().z});
+
+    // We can always assume the output is grounded while y <= 1.
+    if (Current().y == 2) {
+      controller_.Flip();
     }
   }
 
-  if (current_.y >= 2) {
-    writer_->Flip();
+  if (Current().y >= 2) {
+    controller_.Flip();
   }
 
-  FreeMove(Point{0, current_.y, 0});
-  FreeMove(Point{0, 0, 0});
+  // Move back to the origin.
+  controller_.MoveTo(Point{0, Current().y, 0});
+  controller_.MoveTo(Point{0, 0, 0});
 
-  writer_->Halt();
+  // Done!
+  controller_.Halt();
 }
 
-void Solver::FreeMove(const Point& p) {
-  Delta d = p - current_;
-
-  std::vector<LinearDelta> linears;
-  if (d.dx != 0) {
-    linears.emplace_back(LinearDelta{Axis::X, d.dx});
-  }
-  if (d.dy != 0) {
-    linears.emplace_back(LinearDelta{Axis::Y, d.dy});
-  }
-  if (d.dz != 0) {
-    linears.emplace_back(LinearDelta{Axis::Z, d.dz});
-  }
-
-  if (linears.size() == 2 && std::max(std::abs(linears[0].delta), std::abs(linears[1].delta)) <= 5) {
-    writer_->LMove(linears[0], linears[1]);
-  } else {
-    for (auto linear : linears) {
-      while (linear.delta != 0) {
-        LinearDelta move{linear.axis, std::max(std::min(linear.delta, 15), -15)};
-        writer_->SMove(move);
-        linear.delta -= move.delta;
-      }
-    }
-  }
-
-  current_ = p;
-  //LOG(ERROR) << p.x << " " << p.y << " " << p.z;
+const Point& Solver::Current() const {
+  return controller_.current();
 }
 
 int main(int argc, char** argv) {
