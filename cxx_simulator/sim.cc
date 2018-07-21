@@ -261,12 +261,12 @@ struct Matrix{
 };
 
 struct State{
-  int _energy;
+  uint64_t _energy;
   bool _harmonics;
   Matrix _m;
   std::priority_queue<Bot> _bots;
   std::queue<Command> _trace;
-  explicit State(int energy,
+  explicit State(uint64_t energy,
                  bool harmonics,
                  Matrix& m,
                  std::priority_queue<Bot>& bots,
@@ -488,7 +488,7 @@ int main(int argc, char *argv[]){
   nbt.close();
 
   // lightning config
-  int energy = 0;
+  uint64_t energy = 0;
   bool harmonics = false;
   Matrix m(ref.N);
   std::priority_queue<Bot> bots;
