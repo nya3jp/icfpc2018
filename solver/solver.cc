@@ -9,7 +9,7 @@
 
 #include "solver/data/model.h"
 #include "solver/impls/base.h"
-#include "solver/impls/solver.h"
+#include "solver/impls/naive.h"
 #include "solver/io/trace_writer.h"
 
 DEFINE_string(model, "", "Path to input model file");

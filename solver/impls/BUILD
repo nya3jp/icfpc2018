@@ -8,7 +8,7 @@ cc_library(
 cc_library(
     name = "naive",
     srcs = ["naive.cc"],
-    hdrs = ["solver.h"],
+    hdrs = ["naive.h"],
     deps = [
         ":base",
         "//solver/data:geometry",
