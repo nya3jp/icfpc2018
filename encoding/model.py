@@ -28,11 +28,12 @@ class Model:
             data = np.frombuffer(bf.read(), dtype=np.uint8)
         resolution = data[0]
         ret = np.empty((resolution,) * 3, dtype=bool)
-        for i in range(resolution ** 3):
-            x = i // resolution ** 2
-            y = (i % resolution ** 2) // resolution
-            z = i % resolution
-            ret[x, y, z] = bool(data[i // 8 + 1] & (1 << (7 - (i % 8))))
+        R = resolution
+        for x in range(R):
+            for y in range(R):
+                for z in range(R):
+                    i = x * R ** 2 + y * R + z + 8
+                    ret[x, y, z] = bool(data[i // 8] & (1 << (i % 8)))
         return ret
 
     @classmethod
@@ -45,7 +46,7 @@ class Model:
             x = i // resolution ** 2
             y = (i % resolution ** 2) // resolution
             z = i % resolution
-            ret[i // 8 + 1] += (1 << (7 - (i % 8))) if data[x, y, z] else 0
+            ret[i // 8 + 1] += (1 << (i % 8)) if data[x, y, z] else 0
         encoded = ret.tobytes()
         with open(path, 'wb') as bf:
             bf.write(encoded)
