@@ -9,7 +9,7 @@
 class CarelessController {
  public:
   CarelessController(int resolution, TraceWriter* writer)
-      : resolution_(resolution), writer_(writer), current_(0, 0, 0), bid_(1), seeds_((static_cast<uint64_t>(1) << 41) - 4) {}
+      : CarelessController(resolution, writer, Point(), 1, (static_cast<uint64_t>(1) << 41) - 4) {}
   CarelessController(int resolution, TraceWriter* writer, Point current, int bid, uint64_t seeds)
       : resolution_(resolution), writer_(writer), current_(current), bid_(bid), seeds_(seeds) {}
   CarelessController(const CarelessController& other) = delete;
@@ -31,14 +31,12 @@ class CarelessController {
   const Point& current() const { return current_; }
 
  private:
-
   void VerifyCurrent() const;
 
   const int resolution_;
   TraceWriter* const writer_;
-
   Point current_;
-  int bid_;
+  const int bid_;
   uint64_t seeds_;
 };
 

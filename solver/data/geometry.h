@@ -2,8 +2,13 @@
 #define SOLVER_DATA_GEOMETRY_H
 
 #include <algorithm>
+#include <iostream>
 
 #include "glog/logging.h"
+
+constexpr int SHORT_LEN = 5;
+constexpr int LONG_LEN = 15;
+constexpr int FAR_LEN = 30;
 
 // Represents an axis.
 enum class Axis {
@@ -12,16 +17,32 @@ enum class Axis {
   Z = 2,
 };
 
+std::ostream& operator<<(std::ostream& os, Axis a);
+
 // Represents a diff of two points.
 struct Delta {
   int dx, dy, dz;
 
   explicit Delta(int dx = 0, int dy = 0, int dz = 0) : dx(dx), dy(dy), dz(dz) {}
+
+  inline bool IsZero() const {
+    return dx == 0 && dy == 0 && dz == 0;
+  }
+  inline int Manhattan() const {
+    return std::abs(dx) + std::abs(dy) + std::abs(dz);
+  }
+  inline int Chessboard() const {
+    return std::max(std::abs(dx), std::max(std::abs(dy), std::abs(dz)));
+  }
+  inline bool IsNear() const {
+    return Manhattan() <= 2 && Chessboard() == 1;
+  }
+  inline bool IsFar() const {
+    return !IsZero() && Chessboard() <= FAR_LEN;
+  }
 };
 
-constexpr int SHORT_LEN = 5;
-constexpr int LONG_LEN = 15;
-constexpr int FAR_LEN = 30;
+std::ostream& operator<<(std::ostream& os, const Delta& d);
 
 // Represents something like Delta but parallel to an axis.
 struct LinearDelta {
@@ -50,13 +71,15 @@ struct LinearDelta {
   }
 };
 
+std::ostream& operator<<(std::ostream& os, const LinearDelta& d);
+
 // Represents a point in 3D space.
 struct Point {
   int x, y, z;
 
   explicit Point(int x = 0, int y = 0, int z = 0) : x(x), y(y), z(z) {}
 
-  const inline bool IsOrigin() {
+  inline bool IsOrigin() {
     return x == 0 && y == 0 && z == 0;
   }
 
@@ -99,18 +122,14 @@ struct Point {
   }
 };
 
+std::ostream& operator<<(std::ostream& os, const Point& p);
+
 // Represents a region in 3D space.
 struct Region {
   Point mini, maxi;
 
-  explicit Region(Point& p, Delta& d) {
-    mini.x = std::min(p.x, p.x + d.dx);
-    mini.y = std::min(p.y, p.y + d.dy);
-    mini.z = std::min(p.z, p.z + d.dz);
-    maxi.x = std::max(p.x, p.x + d.dx);
-    maxi.y = std::max(p.y, p.y + d.dy);
-    maxi.z = std::max(p.z, p.z + d.dz);
-  }
+  Region() = default;
+  static Region FromPointDelta(const Point& p, const Delta& d);
 
   inline int Dimension() const {
     return (mini.x < maxi.x ? 1 : 0) + (mini.y < maxi.y ? 1 : 0) + (mini.z < maxi.z ? 1 : 0);
@@ -127,6 +146,15 @@ struct Region {
   inline bool operator<(const Region& o) const {
     return mini < o.mini || (mini == o.mini && maxi < o.maxi);
   }
+
+  void Verify() const;
+
+ private:
+  Region(const Point& mini, const Point& maxi) : mini(mini), maxi(maxi) {
+    Verify();
+  }
 };
+
+std::ostream& operator<<(std::ostream& os, const Region& r);
 
 #endif // SOLVER_DATA_GEOMETRY_H

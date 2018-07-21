@@ -91,7 +91,7 @@ struct Bot{
   }
   std::pair<Region, Point> gmodify(Delta& nd, Delta& fd){
     Point corner = _pos + nd;
-    return std::make_pair(Region(corner, fd), corner);
+    return std::make_pair(Region::FromPointDelta(corner, fd), corner);
   }
   std::pair<VCE, Bot> fission(Delta& delta, int m){
     if(_seeds.size() < m + 1){

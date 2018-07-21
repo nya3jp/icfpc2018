@@ -60,12 +60,13 @@ void CarelessController::VerifyCurrent() const {
   CHECK(0 <= current_.x && current_.x < resolution_ &&
         0 <= current_.y && current_.y < resolution_ &&
         0 <= current_.z && current_.z < resolution_)
-      << "(" << current_.x << ", " << current_.y << ", " << current_.z << "); resolution=" << resolution_;
+      << current_ << "; resolution=" << resolution_;
 }
 
 std::unique_ptr<CarelessController> CarelessController::Fission(const Delta& delta, int nchildren) {
+  CHECK(delta.IsNear());
   Point newcurrent = current_ + delta;
-  CHECK(__builtin_popcountl(seeds_) >= nchildren + 1);
+  CHECK(__builtin_popcountl(seeds_) >= nchildren + 1) << seeds_ << " " << nchildren;
   writer_->Fission(delta, nchildren);
 
   uint64_t newbid = __builtin_ctzl(seeds_);
@@ -79,18 +80,24 @@ std::unique_ptr<CarelessController> CarelessController::Fission(const Delta& del
 }
 
 void CarelessController::FusionP(const Delta& delta) {
+  CHECK(delta.IsNear()) << delta;
   writer_->FusionP(delta);
 }
 
 void CarelessController::FusionS(const Delta& delta) {
+  CHECK(delta.IsNear()) << delta;
   writer_->FusionS(delta);
 }
 
 void CarelessController::Gfill(const Delta& nd, const Delta& fd) {
+  CHECK(nd.IsNear()) << nd;
+  CHECK(fd.IsFar()) << fd;
   writer_->Gfill(nd, fd);
 }
 
 void CarelessController::Gvoid(const Delta& nd, const Delta& fd) {
+  CHECK(nd.IsNear()) << nd;
+  CHECK(fd.IsFar()) << fd;
   writer_->Gvoid(nd, fd);
 }
 

@@ -11,6 +11,7 @@ cc_library(
 
 cc_library(
     name = "geometry",
+    srcs = ["geometry.cc"],
     hdrs = ["geometry.h"],
     deps = [
         "@com_github_google_glog//:glog",
