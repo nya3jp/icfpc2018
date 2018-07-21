@@ -1,10 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
-#include <tuple>
 #include <vector>
 #include <map>
 #include <queue>
+#include <set>
 #include <utility>
 
 #include "solver/data/geometry.h"
@@ -16,6 +16,9 @@ enum CmdType{
   CMD_LMOVE,
   CMD_SMOVE,
   CMD_FILL,
+  CMD_VOID,
+  CMD_GFILL,
+  CMD_GVOID,
   CMD_FISSION,
   CMD_FUSION_MASTER,
   CMD_FUSION_SLAVE,
@@ -26,6 +29,7 @@ struct Command{
   LinearDelta ld1;
   LinearDelta ld2;
   Delta nd;
+  Delta fd;
   int arg;
 };
 
@@ -57,6 +61,10 @@ struct VCE{
       minz = c.z + (o.axis == Axis::Z ? neighbor : 0);
     }
   }
+  explicit VCE(Region& r){
+    minx = r.mini.x, miny = r.mini.y, minz = r.mini.z;
+    maxx = r.maxi.x, maxy = r.maxi.y, maxz = r.maxi.z;
+  }
   bool overlap(VCE& o){
     return (minx <= o.maxx && o.minx <= maxx) &&
            (miny <= o.maxy && o.miny <= maxy) &&
@@ -77,9 +85,13 @@ struct Bot{
     _pos = std::move(newpos);
     return VCE(_pos, delta);
   }
-  std::pair<VCE, Point> fill(Delta& delta){
+  std::pair<VCE, Point> modify(Delta& delta){
     Point newpos = _pos + delta;
     return std::make_pair(VCE(newpos), newpos);
+  }
+  std::pair<Region, Point> gmodify(Delta& nd, Delta& fd){
+    Point corner = _pos + nd;
+    return std::make_pair(Region(corner, fd), corner);
   }
   std::pair<VCE, Bot> fission(Delta& delta, int m){
     if(_seeds.size() < m + 1){
@@ -128,12 +140,21 @@ struct Matrix{
       }
     }
   }
-  bool movable(Point& c){
+  bool movable(const Point& c) const{
     return 0 <= c.x && c.x < N && 0 <= c.y && c.y < N && 0 <= c.z && c.z < N &&
            field[c.x][c.y][c.z] == 0;
   }
-  bool fill(Point& c){
-    if(c.x < 1 || c.x > N - 2 || c.y < 0 || c.y > N - 2 || c.z < 0 || c.z > N - 2){
+  bool placeable(const Point& mini, const Point& maxi) const{
+    return 1 <= mini.x && maxi.x < N - 1 && 0 <= mini.y && maxi.y < N - 1 && 1 <= mini.z && maxi.z < N - 1;
+  }
+  bool placeable(const Point& c) const{
+    return placeable(c, c);
+  }
+  bool placeable(const Region& r) const{
+    return placeable(r.mini, r.maxi);
+  }
+  bool fill(const Point& c){
+    if(!placeable(c)){
       throw std::runtime_error("fill out of field");
     }
     if(field[c.x][c.y][c.z] != 0){
@@ -152,10 +173,60 @@ struct Matrix{
     }
     return true;
   }
+  bool void_(const Point& c){
+    if(!placeable(c)){
+      throw std::runtime_error("void out of field");
+    }
+    if(field[c.x][c.y][c.z] == 0){
+      std::cout << "(" << c.x << ", " << c.y << ", " << c.z << ") already voided" << std::endl;
+      return false;
+    }
+    field[c.x][c.y][c.z] = 0;
+    // TODO: bridge detection???
+    return true;
+  }
+  std::pair<int, int> gfill(const Region& r){
+    if(!placeable(r)){
+      throw std::runtime_error("gfill out of field");
+    }
+    int changed = 0;
+    int unchanged = 0;
+    // TODO: union-find here
+    for(int x = r.mini.x; x <= r.maxi.x; ++x)
+    for(int y = r.mini.y; y <= r.maxi.y; ++y)
+    for(int z = r.mini.z; z <= r.maxi.z; ++z){
+      if(field[x][y][z] == 0){
+        field[x][y][z] = 1;  // TODO: value
+        ++changed;
+      }else{
+        ++unchanged;
+      }
+    }
+    return std::make_pair(changed, unchanged);
+  }
+  std::pair<int, int> gvoid(const Region& r){
+    if(!placeable(r)){
+      throw std::runtime_error("gvoid out of field");
+    }
+    int changed = 0;
+    int unchanged = 0;
+    // TODO: some algorithm
+    for(int x = r.mini.x; x <= r.maxi.x; ++x)
+    for(int y = r.mini.y; y <= r.maxi.y; ++y)
+    for(int z = r.mini.z; z <= r.maxi.z; ++z){
+      if(field[x][y][z] != 0){
+        field[x][y][z] = 0;
+        ++changed;
+      }else{
+        ++unchanged;
+      }
+    }
+    return std::make_pair(changed, unchanged);
+  }
   inline bool floating(){
     return nfloat > 0;
   }
-  void bfs(Point& c){
+  void bfs(const Point& c){
     // TODO
   }
   bool load(const char *filename){
@@ -252,6 +323,7 @@ struct State{
     int nbots = _bots.size();
     std::priority_queue<Bot> newbots;
     std::map<std::pair<Point, Point>, Bot> masters, slaves;
+    std::map<Region, std::set<Point> > gfills, gvoids;
     std::vector<VCE> vcs;
     while(!_bots.empty()){
       Bot bot = _bots.top();
@@ -303,13 +375,51 @@ struct State{
 
       case CMD_FILL:
         {
-          std::pair<VCE, Point> res = bot.fill(cmd.nd);
+          std::pair<VCE, Point> res = bot.modify(cmd.nd);
           vcs.emplace_back(res.first);
           bool filled = _m.fill(res.second);
           if(!_harmonics && _m.floating()){
             throw std::runtime_error("cannot place floating objects");
           }
           _energy += filled ? 12 : 6;
+          break;
+        }
+
+      case CMD_VOID:
+        {
+          std::pair<VCE, Point> res = bot.modify(cmd.nd);
+          vcs.emplace_back(res.first);
+          bool voided = _m.void_(res.second);
+          if(!_harmonics && _m.floating()){
+            throw std::runtime_error("float after void");
+          }
+          _energy += voided ? -12 : 3;
+          break;
+        }
+
+      case CMD_GFILL:
+        {
+          std::pair<Region, Point> res = bot.gmodify(cmd.nd, cmd.fd);
+          auto it = gfills.find(res.first);
+          if(it == gfills.end()){
+            vcs.emplace_back(VCE(res.first));
+            gfills.insert(std::make_pair(res.first, std::set<Point>({res.second})));
+          }else{
+            gfills[res.first].insert(res.second);
+          }
+          break;
+        }
+
+      case CMD_GVOID:
+        {
+          std::pair<Region, Point> res = bot.gmodify(cmd.nd, cmd.fd);
+          auto it = gvoids.find(res.first);
+          if(it == gvoids.end()){
+            vcs.emplace_back(VCE(res.first));
+            gvoids.insert(std::make_pair(res.first, std::set<Point>({res.second})));
+          }else{
+            gvoids[res.first].insert(res.second);
+          }
           break;
         }
 
@@ -361,6 +471,24 @@ struct State{
       }
       bot.fusion_post(it->second);
     }
+    for(auto& kv : gfills){
+      auto& region = kv.first;
+      auto& points = kv.second;
+      if(points.size() != (1 <<region.Dimension())){
+        throw std::runtime_error("gfill #points unmatch");
+      }
+      std::pair<int, int> res = _m.gfill(region);
+      _energy += res.first * 12 + res.second * 6;
+    }
+    for(auto& kv : gvoids){
+      auto& region = kv.first;
+      auto& points = kv.second;
+      if(points.size() != (1 <<region.Dimension())){
+        throw std::runtime_error("gvoid #points unmatch");
+      }
+      std::pair<int, int> res = _m.gvoid(region);
+      _energy += res.first * -12 + res.second * 3;
+    }
     _bots = std::move(newbots);
   }
   void mdump(const char *filename){
@@ -368,15 +496,46 @@ struct State{
   }
 };
 
+enum class Problem{
+  Assembly,
+  Disassembly,
+  Reassembly,
+};
+
 int main(int argc, char *argv[]){
   if(argc < 3){
-    std::cerr << "Usage: " << argv[0] << " <mdl> <nbt>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <mdl> <nbt> [<mdl>]" << std::endl;
     return 1;
   }
 
-  Matrix ref;
-  if(!ref.load(argv[1])){
+  // TODO: option
+  Problem problem;
+  switch(*(strrchr(argv[1], '/') ? strrchr(argv[1], '/') + 2 : argv[1] + 1)){
+  case 'A':
+    problem = Problem::Assembly;
+    break;
+  case 'D':
+    problem = Problem::Disassembly;
+    break;
+  case 'R':
+    problem = Problem::Reassembly;
+    break;
+  default:
+    problem = Problem::Assembly;
+  }
+
+  Matrix m0;
+  if(!m0.load(argv[1])){
     return 1;
+  }
+  Matrix m1(m0.N);
+  if(problem == Problem::Reassembly){
+    if(argc < 4 || !m1.load(argv[3])){
+      return 1;
+    }
+  }
+  if(problem == Problem::Assembly){
+    std::swap(m0, m1);
   }
 
   std::ifstream nbt;
@@ -413,9 +572,11 @@ int main(int argc, char *argv[]){
           int delta2 = (int)((code1 >> 4) & 0xf) - 5;
           if(delta1 == 0 || delta1 > 5){
             std::cerr << "invalid sld1 at pos " << nbt.tellg() << std::endl;
+            return 1;
           }
           if(delta2 == 0 || delta2 > 5){
             std::cerr << "invalid sld2 at pos " << nbt.tellg() << std::endl;
+            return 1;
           }
           cmd.type = CMD_LMOVE;
           cmd.ld1 = LinearDelta(static_cast<Axis>(axis1), delta1);
@@ -424,6 +585,7 @@ int main(int argc, char *argv[]){
           int delta1 = (int)code1 - 15;
           if(delta1 == 0 || delta1 > 15){
             std::cerr << "invalid lld at pos " << nbt.tellg() << std::endl;
+            return 1;
           }
           cmd.type = CMD_SMOVE;
           cmd.ld1 = LinearDelta(static_cast<Axis>(axis1), delta1);
@@ -436,7 +598,7 @@ int main(int argc, char *argv[]){
         if((dx == 0 && dy == 0 && dz == 0) ||
            (dx != 0 && dy != 0 && dz != 0)){
           std::cerr << "invalid nd at pos " << nbt.tellg() << std::endl;
-          return 0;
+          return 1;
         }
         cmd.nd = Delta(dx, dy, dz);
         if(subcode == 7){
@@ -449,9 +611,26 @@ int main(int argc, char *argv[]){
           cmd.arg = code1;
         }else if(subcode == 3){
           cmd.type = CMD_FILL;
+        }else if(subcode == 2){
+          cmd.type = CMD_VOID;
         }else{
-          std::cerr << "invalid command at pos " << nbt.tellg() << std::endl;
-          return 0;
+          nbt.read((char *)&code1, 1);
+          int dx = (int)code1 - 30;
+          nbt.read((char *)&code1, 1);
+          int dy = (int)code1 - 30;
+          nbt.read((char *)&code1, 1);
+          int dz = (int)code1 - 30;
+          if((dx == 0 && dy == 0 && dz == 0) ||
+             dx > 30 || dy > 30 || dz > 30){
+            std::cerr << "invalid fd at pos " << nbt.tellg() << std::endl;
+            return 1;
+          }
+          cmd.fd = Delta(dx, dy, dz);
+          if(subcode == 1){
+            cmd.type = CMD_GFILL;
+          }else{
+            cmd.type = CMD_GVOID;
+          }
         }
       }
     }
@@ -459,22 +638,20 @@ int main(int argc, char *argv[]){
   }
   nbt.close();
 
-  // lightning config
   uint64_t energy = 0;
   bool harmonics = false;
-  Matrix m(ref.N);
   std::priority_queue<Bot> bots;
   Seeds seeds;
-  for(int i = 2; i < 21; ++i){
+  for(int i = 2; i < 41; ++i){
     seeds.push(i);
   }
   bots.push(Bot(1, Point(0, 0, 0), seeds));
 
-  State s(energy, harmonics, m, bots, trace);
+  State s(energy, harmonics, m0, bots, trace);
 
   s.run();
 
-  if(s._m.field != ref.field){
+  if(s._m.field != m1.field){
     std::cerr << "generated object differs from reference" << std::endl;
     return 1;
   }

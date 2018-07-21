@@ -98,4 +98,34 @@ struct Point {
   }
 };
 
+// Represents a region in 3D space.
+struct Region {
+  Point mini, maxi;
+
+  explicit Region(Point& p, Delta& d) {
+    mini.x = std::min(p.x, p.x + d.dx);
+    mini.y = std::min(p.y, p.y + d.dy);
+    mini.z = std::min(p.z, p.z + d.dz);
+    maxi.x = std::max(p.x, p.x + d.dx);
+    maxi.y = std::max(p.y, p.y + d.dy);
+    maxi.z = std::max(p.z, p.z + d.dz);
+  }
+
+  inline int Dimension() const {
+    return (mini.x < maxi.x ? 1 : 0) + (mini.y < maxi.y ? 1 : 0) + (mini.z < maxi.z ? 1 : 0);
+  }
+
+  inline bool operator==(const Region& o) const {
+    return mini == o.mini && maxi == o.maxi;
+  }
+
+  inline bool operator!=(const Region& o) const {
+    return !(*this == o);
+  }
+
+  inline bool operator<(const Region& o) const {
+    return mini < o.mini || (mini == o.mini && maxi < o.maxi);
+  }
+};
+
 #endif // SOLVER_DATA_GEOMETRY_H
