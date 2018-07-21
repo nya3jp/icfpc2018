@@ -1,3 +1,6 @@
+import argparse
+import pathlib
+import sys
 import numpy as np
 
 
@@ -70,7 +73,7 @@ class Trace:
         with open(path, 'rb') as f:
             self.commands = np.frombuffer(f.read(), dtype=np.uint8)
 
-    def debug_print(self):
+    def debug_print(self, file=sys.stdout):
         data = self.commands
         skip = False
         for i in range(len(data)):
@@ -80,11 +83,11 @@ class Trace:
                 continue
             command = data[i] & 0b111
             if data[i] == 0b11111111:  # halt
-                print('Halt')
+                print('Halt', file=file)
             elif data[i] == 0b11111110:  # wait
-                print('Wait')
+                print('Wait', file=file)
             elif data[i] == 0b11111101:  # flip
-                print('Flip')
+                print('Flip', file=file)
             elif command == 0b100:  # move
                 skip = True
                 if data[i] & 0b1000:  # l_move
@@ -94,24 +97,24 @@ class Trace:
                     dist1 = data[i + 1] & 0b00001111
                     print('LMove',
                           Trace._decode_sld(axis1, dist1),
-                          Trace._decode_sld(axis2, dist2))
+                          Trace._decode_sld(axis2, dist2), file=file)
                 else:  # s_move
                     axis = (data[i] & 0b00110000) >> 4
                     dist = data[i + 1] & 0b11111
-                    print('SMove', Trace._decode_lld(axis, dist))
+                    print('SMove', Trace._decode_lld(axis, dist), file=file)
             elif command == 0b111:  # fusion_p
                 nd = (data[i] & 0b11111000) >> 3
-                print('FusionP', Trace._decode_nd(nd))
+                print('FusionP', Trace._decode_nd(nd), file=file)
             elif command == 0b110:  # fusion_s
                 nd = (data[i] & 0b11111000) >> 3
-                print('FusionS', Trace._decode_nd(nd))
+                print('FusionS', Trace._decode_nd(nd), file=file)
             elif command == 0b101:  # fission
                 skip = True
                 nd = (data[i] & 0b11111000) >> 3
-                print('Fission', Trace._decode_nd(nd), data[i + 1])
+                print('Fission', Trace._decode_nd(nd), data[i + 1], file=file)
             elif command == 0b011:  # fill
                 nd = (data[i] & 0b11111000) >> 3
-                print('Fill', Trace._decode_nd(nd))
+                print('Fill', Trace._decode_nd(nd), file=file)
             else:
                 raise ValueError('unrecognized command {0:b}'.format(command))
 
@@ -177,3 +180,19 @@ class Trace:
         for coord in decoded_nd:
             assert -1 <= coord <= 1, 'invalid nd: {0}'.format(nd)
         return decoded_nd
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('root_dir', type=str, help='path to the dfltTracesL')
+    args = parser.parse_args()
+
+    root_dir = pathlib.Path(args.root_dir)
+    trace = Trace()
+    for path in root_dir.glob('*.nbt'):
+        path = str(path)
+        trace.clear()
+        trace.decode(path)
+        with open(path[:-4] + '.txt', 'w') as wf:
+            trace.debug_print(wf)
+
