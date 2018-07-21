@@ -48,12 +48,14 @@ def main(argv):
             best_meta = json.load(f)
         best_energy = best_meta['energy']
     else:
-        best_energy = None
+        best_energy = default_energy
 
-    print('Energy: Default %s / Known Best %s / New %s' % (default_energy, best_energy, new_energy))
+    print('-- Default:%12d' % default_energy)
+    print('-- Best:   %12d' % best_energy)
+    print('-- New:    %12d' % new_energy)
 
     if best_energy is not None and new_energy >= best_energy:
-        print('Could not update the previous record.')
+        print('Could not update the best record.')
         return 1
 
     print('Great, new record!')
