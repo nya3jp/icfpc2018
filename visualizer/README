@@ -1,0 +1,1 @@
+Usage: `[visualizer]$ PYTHONPATH=.. python tools/model_to_coordinates.py ../data/models/LA001_tgt.mdl.gz data.js` and open index.html on a browser.
