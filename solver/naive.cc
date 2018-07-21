@@ -36,8 +36,6 @@ class Solver {
 void Solver::Solve() {
   int n = model_->Resolution();
 
-  writer_->Flip();
-
   FreeMove(Point{0, 1, 0});
 
   for (;;) {
@@ -79,9 +77,14 @@ void Solver::Solve() {
       break;
     }
     FreeMove(Point{current_.x, current_.y + 1, current_.z});
+    if (current_.y == 2) {
+      writer_->Flip();
+    }
   }
 
-  writer_->Flip();
+  if (current_.y >= 2) {
+    writer_->Flip();
+  }
 
   FreeMove(Point{0, current_.y, 0});
   FreeMove(Point{0, 0, 0});
