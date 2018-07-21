@@ -7,41 +7,7 @@
 #include <queue>
 #include <utility>
 
-struct Delta{
-  int axis;
-  int delta;
-};
-
-struct NearDelta{
-  int dx, dy, dz;
-};
-
-struct Coordinate{
-  int x, y, z;
-  Coordinate(int _x, int _y, int _z): x(_x), y(_y), z(_z){}
-  const inline bool isorigin(){
-    return x == 0 && y == 0 && z == 0;
-  }
-  inline Coordinate& operator+=(const Delta& o){
-    x += o.axis == 0 ? o.delta : 0;
-    y += o.axis == 1 ? o.delta : 0;
-    z += o.axis == 2 ? o.delta : 0;
-    return *this;
-  }
-  inline Coordinate& operator+=(const NearDelta& o){
-    x += o.dx, y += o.dy, z += o.dz;
-    return *this;
-  }
-  inline Coordinate operator+(const Delta& o) const{
-    return Coordinate(*this) += o;
-  }
-  inline Coordinate operator+(const NearDelta& o) const{
-    return Coordinate(*this) += o;
-  }
-  inline bool operator<(const Coordinate& o) const{
-    return x < o.x || (x == o.x && (y < o.y || (y == o.y && z < o.z)));
-  }
-};
+#include "solver/data/geometry.h"
 
 enum CmdType{
   CMD_HALT,
@@ -57,9 +23,9 @@ enum CmdType{
 
 struct Command{
   CmdType type;
-  Delta delta0;
-  Delta delta1;
-  NearDelta delta2;
+  LinearDelta ld1;
+  LinearDelta ld2;
+  Delta nd;
   int arg;
 };
 
@@ -67,28 +33,28 @@ struct VCE{
   // inclusive
   int minx, miny, minz;
   int maxx, maxy, maxz;
-  explicit VCE(Coordinate& c){
+  explicit VCE(Point& c){
     minx = maxx = c.x;
     miny = maxy = c.y;
     minz = maxz = c.z;
   }
-  explicit VCE(Coordinate& c, Delta& o){
+  explicit VCE(Point& c, LinearDelta& o){
     if(o.delta < 0){
       int neighbor = -1;
-      minx = c.x + (o.axis == 0 ? o.delta : 0);
-      maxx = c.x + (o.axis == 0 ? neighbor : 0);
-      miny = c.y + (o.axis == 1 ? o.delta : 0);
-      maxy = c.y + (o.axis == 1 ? neighbor : 0);
-      minz = c.z + (o.axis == 2 ? o.delta : 0);
-      maxz = c.z + (o.axis == 2 ? neighbor : 0);
+      minx = c.x + (o.axis == Axis::X ? o.delta : 0);
+      maxx = c.x + (o.axis == Axis::X ? neighbor : 0);
+      miny = c.y + (o.axis == Axis::Y ? o.delta : 0);
+      maxy = c.y + (o.axis == Axis::Y ? neighbor : 0);
+      minz = c.z + (o.axis == Axis::Z ? o.delta : 0);
+      maxz = c.z + (o.axis == Axis::Z ? neighbor : 0);
     }else{
       int neighbor = 1;
-      maxx = c.x + (o.axis == 0 ? o.delta : 0);
-      minx = c.x + (o.axis == 0 ? neighbor : 0);
-      maxy = c.y + (o.axis == 1 ? o.delta : 0);
-      miny = c.y + (o.axis == 1 ? neighbor : 0);
-      maxz = c.z + (o.axis == 2 ? o.delta : 0);
-      minz = c.z + (o.axis == 2 ? neighbor : 0);
+      maxx = c.x + (o.axis == Axis::X ? o.delta : 0);
+      minx = c.x + (o.axis == Axis::X ? neighbor : 0);
+      maxy = c.y + (o.axis == Axis::Y ? o.delta : 0);
+      miny = c.y + (o.axis == Axis::Y ? neighbor : 0);
+      maxz = c.z + (o.axis == Axis::Z ? o.delta : 0);
+      minz = c.z + (o.axis == Axis::Z ? neighbor : 0);
     }
   }
   bool overlap(VCE& o){
@@ -102,26 +68,26 @@ typedef std::priority_queue<int, std::vector<int>, std::greater<int> > Seeds;
 
 struct Bot{
   int _bid;
-  Coordinate _pos;
+  Point _pos;
   Seeds _seeds;
-  explicit Bot(int bid, Coordinate pos, Seeds seeds):
+  explicit Bot(int bid, Point pos, Seeds seeds):
     _bid(bid), _pos(pos), _seeds(seeds){}
-  VCE move(Delta& delta){
-    Coordinate newpos = _pos + delta;
+  VCE move(LinearDelta& delta){
+    Point newpos = _pos + delta.ToDelta();
     _pos = std::move(newpos);
     return VCE(_pos, delta);
   }
-  std::pair<VCE, Coordinate> fill(NearDelta& delta){
-    Coordinate newpos = _pos + delta;
+  std::pair<VCE, Point> fill(Delta& delta){
+    Point newpos = _pos + delta;
     return std::make_pair(VCE(newpos), newpos);
   }
-  std::pair<VCE, Bot> fission(NearDelta& delta, int m){
+  std::pair<VCE, Bot> fission(Delta& delta, int m){
     if(_seeds.size() < m + 1){
       throw std::runtime_error("fission: child #seeds too large");
     }
     int newbid = _seeds.top();
     _seeds.pop();
-    Coordinate newpos = _pos + delta;
+    Point newpos = _pos + delta;
     Seeds newseeds;
     for(int i = 0; i < m; ++i){
       newseeds.push(_seeds.top());
@@ -130,7 +96,7 @@ struct Bot{
     Bot newbot(newbid, newpos, newseeds);
     return std::make_pair(VCE(newpos), newbot);
   }
-  Coordinate fusion_pre(NearDelta& delta){
+  Point fusion_pre(Delta& delta){
     return _pos + delta;
   }
   void fusion_post(Bot& bot){
@@ -162,11 +128,11 @@ struct Matrix{
       }
     }
   }
-  bool movable(Coordinate& c){
+  bool movable(Point& c){
     return 0 <= c.x && c.x < N && 0 <= c.y && c.y < N && 0 <= c.z && c.z < N &&
            field[c.x][c.y][c.z] == 0;
   }
-  bool fill(Coordinate& c){
+  bool fill(Point& c){
     if(c.x < 1 || c.x > N - 2 || c.y < 0 || c.y > N - 2 || c.z < 0 || c.z > N - 2){
       throw std::runtime_error("fill out of field");
     }
@@ -189,7 +155,7 @@ struct Matrix{
   inline bool floating(){
     return nfloat > 0;
   }
-  void bfs(Coordinate& c){
+  void bfs(Point& c){
     // TODO
   }
   bool load(const char *filename){
@@ -285,7 +251,7 @@ struct State{
   void step(){
     int nbots = _bots.size();
     std::priority_queue<Bot> newbots;
-    std::map<std::pair<Coordinate, Coordinate>, Bot> masters, slaves;
+    std::map<std::pair<Point, Point>, Bot> masters, slaves;
     std::vector<VCE> vcs;
     while(!_bots.empty()){
       Bot bot = _bots.top();
@@ -295,7 +261,7 @@ struct State{
       vcs.emplace_back(VCE(bot._pos));
       switch(cmd.type){
       case CMD_HALT:
-        if(nbots != 1 || !bot._pos.isorigin() || _harmonics || _trace.size() > 0){
+        if(nbots != 1 || !bot._pos.IsOrigin() || _harmonics || _trace.size() > 0){
           std::cout << nbots << " " << bot._pos.x << " " << bot._pos.y << " " << bot._pos.z << " " << _harmonics << " " << _trace.size() << std::endl;
           throw std::runtime_error("halt");
         }
@@ -310,34 +276,34 @@ struct State{
 
       case CMD_SMOVE:
         {
-          VCE vce = bot.move(cmd.delta0);
+          VCE vce = bot.move(cmd.ld1);
           if(!_m.movable(bot._pos)){
             throw std::runtime_error("move out of field");
           }
           vcs.emplace_back(vce);
-          _energy += 2 * std::abs(cmd.delta0.delta);
+          _energy += 2 * std::abs(cmd.ld1.delta);
           break;
         }
 
       case CMD_LMOVE:
         {
-          VCE vce = bot.move(cmd.delta0);
+          VCE vce = bot.move(cmd.ld1);
           if(!_m.movable(bot._pos)){
             throw std::runtime_error("move out of field");
           }
           vcs.emplace_back(vce);
-          vce = bot.move(cmd.delta1);
+          vce = bot.move(cmd.ld2);
           if(!_m.movable(bot._pos)){
             throw std::runtime_error("move out of field");
           }
           vcs.emplace_back(vce);
-          _energy += 2 * (std::abs(cmd.delta0.delta) + 2 + std::abs(cmd.delta1.delta));
+          _energy += 2 * (std::abs(cmd.ld1.delta) + 2 + std::abs(cmd.ld2.delta));
           break;
         }
 
       case CMD_FILL:
         {
-          std::pair<VCE, Coordinate> res = bot.fill(cmd.delta2);
+          std::pair<VCE, Point> res = bot.fill(cmd.nd);
           vcs.emplace_back(res.first);
           bool filled = _m.fill(res.second);
           if(!_harmonics && _m.floating()){
@@ -349,7 +315,7 @@ struct State{
 
       case CMD_FISSION:
         {
-          std::pair<VCE, Bot> res = bot.fission(cmd.delta2, cmd.arg);
+          std::pair<VCE, Bot> res = bot.fission(cmd.nd, cmd.arg);
           if(!_m.movable(res.second._pos)){
             throw std::runtime_error("fission out of field");
           }
@@ -361,14 +327,14 @@ struct State{
 
       case CMD_FUSION_SLAVE:
         {
-          Coordinate mpos = bot.fusion_pre(cmd.delta2);
+          Point mpos = bot.fusion_pre(cmd.nd);
           slaves.insert(std::make_pair(std::make_pair(mpos, bot._pos), bot));
           continue;
         }
 
       case CMD_FUSION_MASTER:
         {
-          Coordinate spos = bot.fusion_pre(cmd.delta2);
+          Point spos = bot.fusion_pre(cmd.nd);
           masters.insert(std::make_pair(std::make_pair(bot._pos, spos), bot));
           _energy -= 24;
           break;
@@ -422,6 +388,7 @@ int main(int argc, char *argv[]){
 
   std::queue<Command> trace;
   while(true){
+    Command cmd;
     uint8_t code0;
     uint8_t code1;
     nbt.read((char *)&code0, 1);
@@ -429,14 +396,15 @@ int main(int argc, char *argv[]){
       break;
     }
     if(code0 == 0xff){
-      trace.push(Command{CMD_HALT});
+      cmd.type = CMD_HALT;
     }else if(code0 == 0xfe){
-      trace.push(Command{CMD_WAIT});
+      cmd.type = CMD_WAIT;
     }else if(code0 == 0xfd){
-      trace.push(Command{CMD_FLIP});
+      cmd.type = CMD_FLIP;
     }else{
       uint8_t subcode = code0 & 7;
       if(subcode == 4){
+        LinearDelta ld1, ld2;
         nbt.read((char *)&code1, 1);
         int axis1 = (int)((code0 >> 4) & 3) - 1;
         int axis2 = (int)((code0 >> 6) & 3) - 1;
@@ -449,41 +417,45 @@ int main(int argc, char *argv[]){
           if(delta2 == 0 || delta2 > 5){
             std::cerr << "invalid sld2 at pos " << nbt.tellg() << std::endl;
           }
-          trace.push(Command{CMD_LMOVE, Delta{axis1, delta1}, Delta{axis2, delta2}});
+          cmd.type = CMD_LMOVE;
+          cmd.ld1 = LinearDelta(static_cast<Axis>(axis1), delta1);
+          cmd.ld2 = LinearDelta(static_cast<Axis>(axis2), delta2);
         }else{
           int delta1 = (int)code1 - 15;
           if(delta1 == 0 || delta1 > 15){
             std::cerr << "invalid lld at pos " << nbt.tellg() << std::endl;
           }
-          trace.push(Command{CMD_SMOVE, Delta{axis1, delta1}});
+          cmd.type = CMD_SMOVE;
+          cmd.ld1 = LinearDelta(static_cast<Axis>(axis1), delta1);
         }
       }else{
-        int nd = code0 >> 3;
-        int dx = nd / 9 - 1;
-        int dy = nd % 9 / 3 - 1;
-        int dz = nd % 3 - 1;
+        int ndcode = code0 >> 3;
+        int dx = ndcode / 9 - 1;
+        int dy = ndcode % 9 / 3 - 1;
+        int dz = ndcode % 3 - 1;
         if((dx == 0 && dy == 0 && dz == 0) ||
            (dx != 0 && dy != 0 && dz != 0)){
           std::cerr << "invalid nd at pos " << nbt.tellg() << std::endl;
           return 0;
         }
-        NearDelta delta = {dx, dy, dz};
-        Delta gomi = {0, 0};
+        cmd.nd = Delta(dx, dy, dz);
         if(subcode == 7){
-          trace.push(Command{CMD_FUSION_MASTER, gomi, gomi, delta});
+          cmd.type = CMD_FUSION_MASTER;
         }else if(subcode == 6){
-          trace.push(Command{CMD_FUSION_SLAVE, gomi, gomi, delta});
-        }else if(subcode == 3){
-          trace.push(Command{CMD_FILL, gomi, gomi, delta});
+          cmd.type = CMD_FUSION_SLAVE;
         }else if(subcode == 5){
           nbt.read((char *)&code1, 1);
-          trace.push(Command{CMD_FISSION, gomi, gomi, delta, code1});
+          cmd.type = CMD_FISSION;
+          cmd.arg = code1;
+        }else if(subcode == 3){
+          cmd.type = CMD_FILL;
         }else{
           std::cerr << "invalid command at pos " << nbt.tellg() << std::endl;
           return 0;
         }
       }
     }
+    trace.push(cmd);
   }
   nbt.close();
 
@@ -496,7 +468,7 @@ int main(int argc, char *argv[]){
   for(int i = 2; i < 21; ++i){
     seeds.push(i);
   }
-  bots.push(Bot(1, Coordinate(0, 0, 0), seeds));
+  bots.push(Bot(1, Point(0, 0, 0), seeds));
 
   State s(energy, harmonics, m, bots, trace);
 
