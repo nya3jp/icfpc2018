@@ -11,18 +11,16 @@ void CarelessController::Flip() {
   writer_->Flip();
 }
 
-void CarelessController::MoveTo(const Point &destination) {
-  Delta d = destination - current_;
-
+void CarelessController::MoveDelta(const Delta &delta) {
   std::vector<LinearDelta> linears;
-  if (d.dx != 0) {
-    linears.emplace_back(LinearDelta{Axis::X, d.dx});
+  if (delta.dx != 0) {
+    linears.emplace_back(LinearDelta{Axis::X, delta.dx});
   }
-  if (d.dy != 0) {
-    linears.emplace_back(LinearDelta{Axis::Y, d.dy});
+  if (delta.dy != 0) {
+    linears.emplace_back(LinearDelta{Axis::Y, delta.dy});
   }
-  if (d.dz != 0) {
-    linears.emplace_back(LinearDelta{Axis::Z, d.dz});
+  if (delta.dz != 0) {
+    linears.emplace_back(LinearDelta{Axis::Z, delta.dz});
   }
 
   if (linears.size() == 2 && std::max(std::abs(linears[0].delta), std::abs(linears[1].delta)) <= 5) {
@@ -37,7 +35,11 @@ void CarelessController::MoveTo(const Point &destination) {
     }
   }
 
-  current_ = destination;
+  current_ += delta;
+}
+
+void CarelessController::MoveTo(const Point& destination) {
+  MoveDelta(destination - current_);
 }
 
 void CarelessController::FillBelow() {

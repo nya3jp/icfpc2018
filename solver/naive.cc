@@ -36,7 +36,7 @@ void Solver::Solve() {
   int n = model_->Resolution();
 
   // Move up to y=1.
-  controller_.MoveTo(Point{0, 1, 0});
+  controller_.MoveDelta(Delta{0, 1, 0});
 
   // Iterate y=1, 2, 3, ...
   for (;;) {
@@ -86,7 +86,7 @@ void Solver::Solve() {
     }
 
     // Go upward.
-    controller_.MoveTo(Point{Current().x, Current().y + 1, Current().z});
+    controller_.MoveDelta(Delta{0, 1, 0});
 
     // We can always assume the output is grounded while y <= 1.
     if (Current().y == 2) {

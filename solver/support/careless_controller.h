@@ -12,7 +12,8 @@ class CarelessController {
 
   void Halt();
   void Flip();
-  void MoveTo(const Point &destination);
+  void MoveDelta(const Delta &delta);
+  void MoveTo(const Point& destination);
   void FillBelow();
 
   const Point& current() const { return current_; }
