@@ -7,6 +7,15 @@ class Trace:
     trace.decode('path')
     trace.debug_print()
 
+    How to encode:
+    trace = Trace()
+    trace.wait()
+    trace.flip()
+    trace.s_move((0, 1, 0))
+    trace.flip()
+    trace.halt()
+    trace.encode('path')
+
     """
 
     def __init__(self):
@@ -70,11 +79,11 @@ class Trace:
                 skip = False
                 continue
             command = data[i] & 0b111
-            if command == 0b111:  # halt
+            if data[i] == 0b11111111:  # halt
                 print('Halt')
-            elif command == 0b110:  # wait
+            elif data[i] == 0b11111110:  # wait
                 print('Wait')
-            elif command == 0b101:  # flip
+            elif data[i] == 0b11111101:  # flip
                 print('Flip')
             elif command == 0b100:  # move
                 skip = True
