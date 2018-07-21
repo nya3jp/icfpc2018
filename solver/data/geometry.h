@@ -1,7 +1,7 @@
 #ifndef SOLVER_DATA_GEOMETRY_H
 #define SOLVER_DATA_GEOMETRY_H
 
-#include "../../../../../../private/var/tmp/_bazel_nya/eedbb43e94159213235205e6c9865788/execroot/__main__/bazel-out/darwin-fastbuild/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h"
+#include "glog/logging.h"
 
 enum class Axis {
   X = 0,
