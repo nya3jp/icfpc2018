@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gflags/gflags.h"
@@ -56,14 +57,22 @@ void Solver::Solve() {
       break;
     }
 
-    for (int x = min_x; x <= max_x; ++x) {
-      // TODO: Flip z order
-      for (int z = min_z; z <= max_z; ++z) {
+    int init_x = std::abs(min_x - current_.x) < std::abs(max_x - current_.x) ? min_x : max_x;
+    int init_z = std::abs(min_z - current_.z) < std::abs(max_z - current_.z) ? min_z : max_z;
+    int move_x = init_x == min_x ? 1 : -1;
+    int move_z = init_z == min_z ? 1 : -1;
+    int from_z = init_z;
+    int to_z = init_z == min_z ? max_z : min_z;
+
+    for (int x = init_x; min_x <= x && x <= max_x; x += move_x) {
+      for (int z = from_z; min_z <= z && z <= max_z; z += move_z) {
         if (model_->Get(x, current_.y - 1, z)) {
           FreeMove(Point{x, current_.y, z});
           writer_->Fill(Delta{0, -1, 0});
         }
       }
+      std::swap(from_z, to_z);
+      move_z *= -1;
     }
 
     if (current_.y == n - 1) {
