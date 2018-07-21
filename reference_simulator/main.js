@@ -152,7 +152,17 @@ requestAnimationFrame = function(callback) { setTimeout(callback, 0); };
 require('../third_party/official/exec-trace.js');
 
 function onUpdate(html) {
-  console.log(html);
+  console.error(html);
+  if (html.length === 0 ||
+      html.indexOf('Loading') === 0 ||
+      html.indexOf('Executing') === 0) {
+    return;
+  }
+  if (html.indexOf('Success::') === 0) {
+    const time = /Time:\s*(\d+)/.exec(html)[1];
+    const energy = /Energy:\s*(\d+)/.exec(html)[1];
+    console.log(`${time}\t${energy}`);
+  }
 }
 
 function main() {
