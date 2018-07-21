@@ -162,6 +162,8 @@ function onUpdate(html) {
     const time = /Time:\s*(\d+)/.exec(html)[1];
     const energy = /Energy:\s*(\d+)/.exec(html)[1];
     console.log(`${time}\t${energy}`);
+  } else {
+    process.exit(1);
   }
 }
 
