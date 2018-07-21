@@ -1,38 +1,11 @@
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
+#include "solver/impls/solver.h"
 
-#include "gflags/gflags.h"
-#include "glog/logging.h"
+#include <algorithm>
+#include <utility>
 
 #include "solver/data/geometry.h"
-#include "solver/data/model.h"
-#include "solver/io/trace_writer.h"
-#include "solver/support/careless_controller.h"
 
-DEFINE_string(model, "", "Path to input model file");
-DEFINE_string(trace, "", "Path to output trace file");
-
-class Solver {
- public:
-  Solver(const Model* model, TraceWriter* writer)
-      : model_(model), controller_(model->Resolution(), writer) {}
-  Solver(const Solver& other) = delete;
-
-  void Solve();
-
- private:
-  const Point& Current() const;
-
-  const Model* const model_;
-  CarelessController controller_;
-};
-
-void Solver::Solve() {
+void NaiveSolver::Solve() {
   int n = model_->Resolution();
 
   // Move up to y=1.
@@ -106,31 +79,6 @@ void Solver::Solve() {
   controller_.Halt();
 }
 
-const Point& Solver::Current() const {
+const Point& NaiveSolver::Current() const {
   return controller_.current();
-}
-
-int main(int argc, char** argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
-  google::InstallFailureSignalHandler();
-
-  if (FLAGS_model.empty() || FLAGS_trace.empty()) {
-    LOG(ERROR) << "Usage: " << argv[0] << " --model=LA000.mdl --trace=out.nbt";
-    return 1;
-  }
-
-  std::unique_ptr<Model> model;
-  {
-    std::ifstream fin(FLAGS_model.c_str());
-    model = Model::FromStream(fin);
-  }
-
-  std::ofstream fout(FLAGS_trace.c_str());
-  TraceWriter writer(fout);
-
-  Solver solver(model.get(), &writer);
-  solver.Solve();
-
-  return 0;
 }
