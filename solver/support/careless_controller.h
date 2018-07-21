@@ -1,6 +1,8 @@
 #ifndef SOLVER_SUPPORT_CARELESS_CONTROLLER_H
 #define SOLVER_SUPPORT_CARELESS_CONTROLLER_H
 
+#include <memory>
+
 #include "solver/data/geometry.h"
 #include "solver/io/trace_writer.h"
 
