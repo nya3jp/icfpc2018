@@ -4,6 +4,10 @@ void TraceWriter::Halt() {
   WriteByte(0b11111111);
 }
 
+void TraceWriter::Wait() {
+  WriteByte(0b11111110);
+}
+
 void TraceWriter::Flip() {
   WriteByte(0b11111101);
 }
@@ -26,6 +30,40 @@ void TraceWriter::LMove(const LinearDelta& sld1, const LinearDelta& sld2) {
 void TraceWriter::Fill(const Delta& nd) {
   WriteByte(0b00000011 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
   //LOG(ERROR) << "Fill";
+}
+
+void TraceWriter::Void(const Delta& nd) {
+  WriteByte(0b00000010 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
+  //LOG(ERROR) << "Void";
+}
+
+void TraceWriter::Fission(const Delta& nd, int nchildren) {
+  WriteByte(0b00000101 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
+  WriteByte(nchildren);
+}
+
+void TraceWriter::FusionP(const Delta& nd) {
+  WriteByte(0b00000111 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
+}
+
+void TraceWriter::FusionS(const Delta& nd) {
+  WriteByte(0b00000110 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
+}
+
+void TraceWriter::Gfill(const Delta& nd, const Delta& fd) {
+  WriteByte(0b00000001 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
+  WriteByte(fd.dx + 30);
+  WriteByte(fd.dy + 30);
+  WriteByte(fd.dz + 30);
+  //LOG(ERROR) << "Gfill";
+}
+
+void TraceWriter::Gvoid(const Delta& nd, const Delta& fd) {
+  WriteByte(0b00000000 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
+  WriteByte(fd.dx + 30);
+  WriteByte(fd.dy + 30);
+  WriteByte(fd.dz + 30);
+  //LOG(ERROR) << "Gvoid";
 }
 
 void TraceWriter::WriteByte(uint8_t b) {

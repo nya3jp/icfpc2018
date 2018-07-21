@@ -21,6 +21,7 @@ struct Delta {
 
 constexpr int SHORT_LEN = 5;
 constexpr int LONG_LEN = 15;
+constexpr int FAR_LEN = 30;
 
 // Represents something like Delta but parallel to an axis.
 struct LinearDelta {

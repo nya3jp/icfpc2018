@@ -10,6 +10,7 @@
 #include "solver/data/model.h"
 #include "solver/impls/base.h"
 #include "solver/impls/naive.h"
+#include "solver/impls/bbgvoid.h"
 #include "solver/io/trace_writer.h"
 
 DEFINE_string(model, "", "Path to input model file");
@@ -20,6 +21,9 @@ std::unique_ptr<Solver> CreateSolver(
     const std::string& name, const Model* model, TraceWriter* writer) {
   if (name == "naive") {
     return std::unique_ptr<Solver>(new NaiveSolver(model, writer));
+  }
+  if (name == "bbgvoid") {
+    return std::unique_ptr<Solver>(new BBGvoidSolver(model, writer));
   }
   LOG(FATAL) << "No solver impl found. Set --impl correctly.";
   return nullptr;

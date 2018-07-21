@@ -7,14 +7,24 @@
 class CarelessController {
  public:
   CarelessController(int resolution, TraceWriter* writer)
-      : resolution_(resolution), writer_(writer), current_(0, 0, 0) {}
+      : resolution_(resolution), writer_(writer), current_(0, 0, 0), bid_(1), seeds_((static_cast<uint64_t>(1) << 41) - 4) {}
+  CarelessController(int resolution, TraceWriter* writer, Point current, int bid, uint64_t seeds)
+      : resolution_(resolution), writer_(writer), current_(current), bid_(bid), seeds_(seeds) {}
   CarelessController(const CarelessController& other) = delete;
 
   void Halt();
+  void Wait();
   void Flip();
   void MoveDelta(const Delta &delta);
   void MoveTo(const Point& destination);
   void FillBelow();
+  std::unique_ptr<CarelessController> Fission(const Delta& delta, int nchildren);
+  void FusionP(const Delta& delta);
+  void FusionS(const Delta& delta);
+  void Gfill(const Delta& nd, const Delta& fd);
+  void Gvoid(const Delta& nd, const Delta& fd);
+
+  bool operator<(const CarelessController& o) const;
 
   const Point& current() const { return current_; }
 
@@ -26,6 +36,8 @@ class CarelessController {
   TraceWriter* const writer_;
 
   Point current_;
+  int bid_;
+  uint64_t seeds_;
 };
 
 #endif // SOLVER_SUPPORT_CARELESS_CONTROLLER_H

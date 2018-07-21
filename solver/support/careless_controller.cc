@@ -7,6 +7,10 @@ void CarelessController::Halt() {
   writer_->Halt();
 }
 
+void CarelessController::Wait() {
+  writer_->Wait();
+}
+
 void CarelessController::Flip() {
   writer_->Flip();
 }
@@ -57,4 +61,39 @@ void CarelessController::VerifyCurrent() const {
         0 <= current_.y && current_.y < resolution_ &&
         0 <= current_.z && current_.z < resolution_)
       << "(" << current_.x << ", " << current_.y << ", " << current_.z << "); resolution=" << resolution_;
+}
+
+std::unique_ptr<CarelessController> CarelessController::Fission(const Delta& delta, int nchildren) {
+  Point newcurrent = current_ + delta;
+  CHECK(__builtin_popcountl(seeds_) >= nchildren + 1);
+  writer_->Fission(delta, nchildren);
+
+  uint64_t newbid = __builtin_ctzl(seeds_);
+  seeds_ ^= static_cast<uint64_t>(1) << newbid;
+  uint64_t newseeds = 0;
+  for (int i = 0; i < nchildren; ++i) {
+    newseeds ^= static_cast<uint64_t>(1) << __builtin_ctzl(seeds_);
+  }
+  seeds_ ^= newseeds;
+  return std::unique_ptr<CarelessController>(new CarelessController(resolution_, writer_, newcurrent, newbid, newseeds));
+}
+
+void CarelessController::FusionP(const Delta& delta) {
+  writer_->FusionP(delta);
+}
+
+void CarelessController::FusionS(const Delta& delta) {
+  writer_->FusionS(delta);
+}
+
+void CarelessController::Gfill(const Delta& nd, const Delta& fd) {
+  writer_->Gfill(nd, fd);
+}
+
+void CarelessController::Gvoid(const Delta& nd, const Delta& fd) {
+  writer_->Gvoid(nd, fd);
+}
+
+bool CarelessController::operator<(const CarelessController& o) const {
+  return bid_ < o.bid_;
 }
