@@ -23,9 +23,31 @@ class Trace:
 
     def __init__(self):
         self.commands = list()
+        self.idx = 0
 
     def clear(self):
         self.commands = list()
+        self.idx = 0
+
+    def next(self):
+        assert self.idx <= len(self.commands)
+        if self.idx == len(self.commands):
+            return [0b11111110]
+        if self.commands[self.idx] in [0b11111111,
+                                       0b11111110,
+                                       0b11111101]:
+            ret = [self.commands[self.idx]]
+            self.idx += 1
+            return ret
+        if self.commands[self.idx] & 0b111 in [0b111,
+                                               0b110,
+                                               0b011]:
+            ret = [self.commands[self.idx]]
+            self.idx += 1
+            return ret
+        ret = [self.commands[self.idx], self.commands[self.idx + 1]]
+        self.idx += 2
+        return ret
 
     def halt(self):
         self.commands.append(0b11111111)

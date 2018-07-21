@@ -49,6 +49,20 @@ class SlightlyBetterSolution:
             while (i < len(self.command) and
                    (self._is_same_direction((dx, dy, dz), self.command[i]) or
                     self._is_sld((dx, dy, dz), self.command[i]))):
+                # todo これを外すと結果が向上するが壊れうる
+                # if not self._is_same_direction((dx, dy, dz), self.command[i]):
+                #     if (dx + self.command[i][0]) * dx < 0:
+                #         self.command[i] = (self.command[i][0] + dx, 0, 0)
+                #         dx = 0
+                #     elif (dy + self.command[i][1]) * dy < 0:
+                #         self.command[i] = (0, self.command[i][0] + dy, 0)
+                #         dy = 0
+                #     elif (dz + self.command[i][2]) * dz < 0:
+                #         self.command[i] = (0, 0, self.command[i][0] + dz)
+                #         dz = 0
+                #     if self.command[i] == (0, 0, 0):
+                #         i += 1
+                #     break
                 dx += self.command[i][0]
                 dy += self.command[i][1]
                 dz += self.command[i][2]
