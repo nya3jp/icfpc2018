@@ -2,23 +2,36 @@
 
 #include "glog/logging.h"
 
+// To enable logging, specify: --vmodule=trace_writer=1
+
 void TraceWriter::Halt() {
   WriteByte(0b11111111);
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "Halt";
+  }
 }
 
 void TraceWriter::Wait() {
   WriteByte(0b11111110);
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "Wait";
+  }
 }
 
 void TraceWriter::Flip() {
   WriteByte(0b11111101);
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "Flip";
+  }
 }
 
 void TraceWriter::SMove(const LinearDelta& lld) {
   CHECK(lld.IsLong()) << lld;
   WriteByte(0b00000100 | ((static_cast<int>(lld.axis) + 1) << 4));
   WriteByte(lld.delta + LONG_LEN);
-  //LOG(ERROR) << "SMove " << (int)lld.axis << " " << lld.delta;
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "SMove " << lld;
+  }
 }
 
 void TraceWriter::LMove(const LinearDelta& sld1, const LinearDelta& sld2) {
@@ -26,35 +39,50 @@ void TraceWriter::LMove(const LinearDelta& sld1, const LinearDelta& sld2) {
   CHECK(sld2.IsShort()) << sld2;
   WriteByte(0b00001100 | ((static_cast<int>(sld1.axis) + 1) << 4) | ((static_cast<int>(sld2.axis) + 1) << 6));
   WriteByte((sld1.delta + SHORT_LEN) | ((sld2.delta + SHORT_LEN) << 4));
-  //LOG(ERROR) << "LMove " << (int)sld1.axis << " " << sld1.delta << " " << (int)sld2.axis << " " << sld2.delta;
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "LMove " << sld1 << " " << sld2;
+  }
 }
 
 void TraceWriter::Fill(const Delta& nd) {
   CHECK(nd.IsNear()) << nd;
   WriteByte(0b00000011 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
-  //LOG(ERROR) << "Fill";
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "Fill " << nd;
+  }
 }
 
 void TraceWriter::Void(const Delta& nd) {
   CHECK(nd.IsNear()) << nd;
   WriteByte(0b00000010 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
-  //LOG(ERROR) << "Void";
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "Void" << nd;
+  }
 }
 
 void TraceWriter::Fission(const Delta& nd, int nchildren) {
   CHECK(nd.IsNear()) << nd;
   WriteByte(0b00000101 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
   WriteByte(nchildren);
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "Fission " << nd << " " << nchildren;
+  }
 }
 
 void TraceWriter::FusionP(const Delta& nd) {
   CHECK(nd.IsNear()) << nd;
   WriteByte(0b00000111 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "FusionP " << nd;
+  }
 }
 
 void TraceWriter::FusionS(const Delta& nd) {
   CHECK(nd.IsNear()) << nd;
   WriteByte(0b00000110 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "FusionS " << nd;
+  }
 }
 
 void TraceWriter::Gfill(const Delta& nd, const Delta& fd) {
@@ -64,7 +92,9 @@ void TraceWriter::Gfill(const Delta& nd, const Delta& fd) {
   WriteByte(fd.dx + 30);
   WriteByte(fd.dy + 30);
   WriteByte(fd.dz + 30);
-  //LOG(ERROR) << "Gfill";
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "Gfill " << nd << " " << fd;
+  }
 }
 
 void TraceWriter::Gvoid(const Delta& nd, const Delta& fd) {
@@ -74,7 +104,9 @@ void TraceWriter::Gvoid(const Delta& nd, const Delta& fd) {
   WriteByte(fd.dx + 30);
   WriteByte(fd.dy + 30);
   WriteByte(fd.dz + 30);
-  //LOG(ERROR) << "Gvoid";
+  if (VLOG_IS_ON(1)) {  // See comment at the top
+    VLOG(1) << "Gvoid " << nd << " " << fd;
+  }
 }
 
 void TraceWriter::Command(const struct Command& command) {

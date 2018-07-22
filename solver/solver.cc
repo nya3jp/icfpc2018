@@ -42,6 +42,7 @@ std::unique_ptr<Solver> CreateSolver(
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
+  google::LogToStderr();
   google::InstallFailureSignalHandler();
 
   if ((FLAGS_source.empty() && FLAGS_target.empty()) || FLAGS_output.empty()) {
