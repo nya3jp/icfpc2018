@@ -101,7 +101,7 @@ TaskPtr MakeNaiveMoveTask(int bot_id, Point destination) {
         std::max(std::min(linears[0].delta, LONG_LEN), -LONG_LEN)};
     bool success = commander->Set(bot_id, Command::SMove(move));
     CHECK(success);
-    return move == linears[0];
+    return linears.size() == 1 && move == linears[0];
   });
 }
 
