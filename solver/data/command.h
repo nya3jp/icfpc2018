@@ -42,42 +42,42 @@ struct Command {
     return Command(FLIP, LinearDelta(), LinearDelta(), Delta(), Delta(), 0);
   }
   static Command LMove(const LinearDelta& ld1, const LinearDelta& ld2) {
-    CHECK(ld1.IsShort());
-    CHECK(ld2.IsShort());
+    CHECK(ld1.IsShort()) << ld1;
+    CHECK(ld2.IsShort()) << ld2;
     return Command(LMOVE, ld1, ld2, Delta(), Delta(), 0);
   }
   static Command SMove(const LinearDelta& ld) {
-    CHECK(ld.IsLong());
+    CHECK(ld.IsLong()) << ld;
     return Command(SMOVE, ld, LinearDelta(), Delta(), Delta(), 0);
   }
   static Command Fill(const Delta& nd) {
-    CHECK(nd.IsNear());
+    CHECK(nd.IsNear()) << nd;
     return Command(FILL, LinearDelta(), LinearDelta(), nd, Delta(), 0);
   }
   static Command Void(const Delta& nd) {
-    CHECK(nd.IsNear());
+    CHECK(nd.IsNear()) << nd;
     return Command(VOID, LinearDelta(), LinearDelta(), nd, Delta(), 0);
   }
   static Command GFill(const Delta& nd, const Delta& fd) {
-    CHECK(nd.IsNear());
-    CHECK(fd.IsFar());
+    CHECK(nd.IsNear()) << nd;
+    CHECK(fd.IsFar()) << fd;
     return Command(GFILL, LinearDelta(), LinearDelta(), nd, fd, 0);
   }
   static Command GVoid(const Delta& nd, const Delta& fd) {
-    CHECK(nd.IsNear());
-    CHECK(fd.IsFar());
+    CHECK(nd.IsNear()) << nd;
+    CHECK(fd.IsFar()) << fd;
     return Command(GVOID, LinearDelta(), LinearDelta(), nd, fd, 0);
   }
   static Command Fission(const Delta& nd, int arg) {
-    CHECK(nd.IsNear());
+    CHECK(nd.IsNear()) << nd;
     return Command(FISSION, LinearDelta(), LinearDelta(), nd, Delta(), arg);
   }
   static Command FusionP(const Delta& nd) {
-    CHECK(nd.IsNear());
+    CHECK(nd.IsNear()) << nd;
     return Command(FUSION_MASTER, LinearDelta(), LinearDelta(), nd, Delta(), 0);
   }
   static Command FusionS(const Delta& nd) {
-    CHECK(nd.IsNear());
+    CHECK(nd.IsNear()) << nd;
     return Command(FUSION_SLAVE, LinearDelta(), LinearDelta(), nd, Delta(), 0);
   }
 };
