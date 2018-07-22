@@ -27,3 +27,13 @@ cc_library(
         "@com_github_google_glog//:glog",
     ]
 )
+
+cc_library(
+    name = "barrier",
+    srcs = ["barrier.cc"],
+    hdrs = ["barrier.h"],
+    deps = [
+        ":base",
+        "@com_github_google_glog//:glog",
+    ]
+)
