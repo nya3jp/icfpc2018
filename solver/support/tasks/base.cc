@@ -27,3 +27,15 @@ bool BarrierTask::Decide(Commander* commander) {
   }
   return done;
 }
+
+TaskPtr MakeTask(TaskPtr task) {
+  return task;
+}
+
+TaskPtr MakeTask(Task* task) {
+  return TaskPtr(task);
+}
+
+TaskPtr MakeTask(std::function<bool(TickExecutor::Commander*)> func) {
+  return TaskPtr(new FunctionTask(std::move(func)));
+}

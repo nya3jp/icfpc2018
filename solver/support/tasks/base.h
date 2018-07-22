@@ -1,6 +1,7 @@
 #ifndef SOLVER_SUPPORT_TASKS_BASE_H
 #define SOLVER_SUPPORT_TASKS_BASE_H
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -53,5 +54,51 @@ class MockTask : public Task {
     return true;
   }
 };
+
+class FunctionTask : public Task {
+ public:
+  using FuncType = std::function<bool(TickExecutor::Commander*)>;
+
+  explicit FunctionTask(FuncType func) : func_(std::move(func)) {}
+  FunctionTask(const FunctionTask& other) = delete;
+
+  bool Decide(Commander* commander) override {
+    return func_(commander);
+  }
+
+ private:
+  FuncType func_;
+};
+
+TaskPtr MakeTask(TaskPtr task);
+TaskPtr MakeTask(Task* task);
+TaskPtr MakeTask(std::function<bool(TickExecutor::Commander*)> func);
+
+template<class T, class... Args>
+void AppendTaskList(std::vector<TaskPtr>& tasks, T task_like, Args&&... args) {
+  tasks.emplace_back(MakeTask(std::move(task_like)));
+  AppendTaskList(tasks, std::forward<Args>(args)...);
+};
+
+template<class None = void>
+void AppendTaskList(std::vector<TaskPtr>& tasks) {
+}
+
+template<class... Args>
+std::vector<TaskPtr> MakeTaskList(Args&&... args) {
+  std::vector<TaskPtr> tasks;
+  AppendTaskList(tasks, std::forward<Args>(args)...);
+  return tasks;
+}
+
+template<class... Args>
+TaskPtr MakeSequenceTask(Args&&... args) {
+  return TaskPtr(new SequenceTask(MakeTaskList(std::forward<Args>(args)...)));
+}
+
+template<class... Args>
+TaskPtr MakeBarrierTask(Args&&... args) {
+  return TaskPtr(new BarrierTask(MakeTaskList(std::forward<Args>(args)...)));
+}
 
 #endif //SOLVER_SUPPORT_TASKS_BASE_H
