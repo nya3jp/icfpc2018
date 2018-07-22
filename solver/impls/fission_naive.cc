@@ -156,7 +156,7 @@ TaskPtr MakePrintTask(int bot_id, Region region) {
     CHECK_EQ(pos, region.mini);
 
     // Iterate y=1, 2, 3, ...
-    for (int scan_y = 1; scan_y < region.maxi.y; ++scan_y) {
+    for (int scan_y = 1; scan_y <= region.maxi.y; ++scan_y) {
       // Compute the bounding box in the current x-z plane.
       int min_x = region.maxi.x + 1;
       int min_z = region.maxi.z + 1;
@@ -209,8 +209,10 @@ TaskPtr MakePrintTask(int bot_id, Region region) {
     }
 
     // Go back to the home position.
-    pos.y += 1;
-    plan.emplace_back(MakeNaiveMoveTask(bot_id, pos));
+    if (pos.y < region.maxi.y - 1) {
+      pos.y += 1;
+      plan.emplace_back(MakeNaiveMoveTask(bot_id, pos));
+    }
     pos.z = 0;
     plan.emplace_back(MakeNaiveMoveTask(bot_id, pos));
     pos = region.mini;
