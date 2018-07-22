@@ -74,7 +74,15 @@ TickExecutor::Commander::Commander(const FieldState* field)
 }
 
 bool TickExecutor::Commander::Interfere(const Region& region){
-  return false;  // TODO;
+  for (const auto& other : footprints_) {
+    if (region.mini.x <= other.maxi.x && other.mini.x <= region.maxi.x &&
+        region.mini.y <= other.maxi.y && other.mini.y <= region.maxi.y &&
+        region.mini.z <= other.maxi.z && other.mini.z <= region.maxi.z) {
+      return true;
+    }
+  }
+  footprints_.push_back(region);
+  return false;
 }
 
 const std::vector<Region> TickExecutor::Commander::VolatileCoordinates(int bot_id, const Command& command) {

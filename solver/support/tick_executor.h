@@ -30,6 +30,7 @@ class TickExecutor {
 
     const FieldState* const field_;
     std::map<int, Command> commands_;
+    std::vector<Region> footprints_;
     std::map<Region, std::set<Region> > gfills_;
     std::map<Region, std::set<Region> > gvoids_;
     std::map<std::pair<Region, Region>, int> masters_;
