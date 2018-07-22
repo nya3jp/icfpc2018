@@ -9,7 +9,7 @@
 class CarelessController {
  public:
   CarelessController(int resolution, TraceWriter* writer)
-      : CarelessController(resolution, writer, Point(), 1, (static_cast<uint64_t>(1) << 41) - 4) {}
+      : CarelessController(resolution, writer, Point(), 0, (static_cast<uint64_t>(1) << 40) - 2) {}
   CarelessController(int resolution, TraceWriter* writer, Point current, int bid, uint64_t seeds)
       : resolution_(resolution), writer_(writer), current_(current), bid_(bid), seeds_(seeds) {}
   CarelessController(const CarelessController& other) = delete;
@@ -20,7 +20,7 @@ class CarelessController {
   void MoveDelta(const Delta &delta);
   void MoveTo(const Point& destination);
   void FillBelow();
-  std::unique_ptr<CarelessController> Fission(const Delta& delta, int nchildren);
+  CarelessController* Fission(const Delta& delta, int nchildren);
   void FusionP(const Delta& delta);
   void FusionS(const Delta& delta);
   void Gfill(const Delta& nd, const Delta& fd);

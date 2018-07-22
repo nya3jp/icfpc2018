@@ -39,7 +39,7 @@ void BBGvoidSolver::Solve() {
     {Axis::X, max_x + 1 - min_x, false, false, false, false},
     {Axis::Z, max_z + 1 - min_z, true, false, false, false},
     {Axis::X, max_x + 1 - min_x, false, false, false, false},
-    {Axis::Y, max_y - min_y, true, true, false, false},
+    {Axis::Y, max_y - min_y - 1, true, true, false, false},
     {Axis::X, max_x + 1 - min_x, false, false, false, false},
     {Axis::Z, max_z + 1 - min_z, true, false, false, false},
     {Axis::X, max_x + 1 - min_x, false, false, false, false},
@@ -65,21 +65,21 @@ void BBGvoidSolver::Solve() {
           ++nfinished;
         }
       }else if(config[i].fork_x){
-        config[i + 1].controller = config[i].controller->Fission(Delta{1, 0, 0}, 1).get();
+        config[i + 1].controller = config[i].controller->Fission(Delta{1, 0, 0}, 0);
         config[i + 1].active = true;
         config[i].fork_x = false;
         if(!config[i].fork_z){
           ++nfinished;
         }
       }else if(config[i].fork_z){
-        config[i + 2].controller = config[i].controller->Fission(Delta{0, 0, 1}, 2).get();
+        config[i + 2].controller = config[i].controller->Fission(Delta{0, 0, 1}, 1);
         config[i + 2].active = true;
         config[i].fork_z = false;
         if(!config[i].fork_y){
           ++nfinished;
         }
       }else if(config[i].fork_y){
-        config[i + 4].controller = config[i].controller->Fission(Delta{0, 1, 0}, 4).get();
+        config[i + 4].controller = config[i].controller->Fission(Delta{0, 1, 0}, 3);
         config[i + 4].active = true;
         config[i].fork_y = false;
         ++nfinished;
@@ -104,7 +104,7 @@ void BBGvoidSolver::Solve() {
   config[5].axis = config[6].axis = config[7].axis = Axis::Y;
   config[1].delta = max_x + 1 - min_x;
   config[2].delta = config[3].delta = max_z + 1 - min_z;
-  config[4].delta = config[5].delta = config[6].delta = config[7].delta = max_y - min_y;
+  config[4].delta = config[5].delta = config[6].delta = config[7].delta = max_y - min_y - 1;
   Axis axis = Axis::Y;
   while(true){
     std::vector<int> actives;

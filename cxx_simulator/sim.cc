@@ -82,8 +82,9 @@ struct Bot{
     _bid(bid), _pos(pos), _seeds(seeds){}
   VCE move(LinearDelta& delta){
     Point newpos = _pos + delta.ToDelta();
+    VCE vce = VCE(_pos, delta);
     _pos = std::move(newpos);
-    return VCE(_pos, delta);
+    return vce;
   }
   std::pair<VCE, Point> modify(Delta& delta){
     Point newpos = _pos + delta;

@@ -63,20 +63,21 @@ void CarelessController::VerifyCurrent() const {
       << current_ << "; resolution=" << resolution_;
 }
 
-std::unique_ptr<CarelessController> CarelessController::Fission(const Delta& delta, int nchildren) {
+CarelessController* CarelessController::Fission(const Delta& delta, int nchildren) {
   CHECK(delta.IsNear());
   Point newcurrent = current_ + delta;
-  CHECK(__builtin_popcountl(seeds_) >= nchildren + 1) << seeds_ << " " << nchildren;
+  CHECK(__builtin_popcountl(seeds_) >= nchildren + 1) << bid_ << " " << seeds_ << " " << nchildren;
   writer_->Fission(delta, nchildren);
 
   uint64_t newbid = __builtin_ctzl(seeds_);
   seeds_ ^= static_cast<uint64_t>(1) << newbid;
   uint64_t newseeds = 0;
   for (int i = 0; i < nchildren; ++i) {
-    newseeds ^= static_cast<uint64_t>(1) << __builtin_ctzl(seeds_);
+    uint64_t bit = static_cast<uint64_t>(1) << __builtin_ctzl(seeds_);
+    newseeds ^= bit;
+    seeds_ ^= bit;
   }
-  seeds_ ^= newseeds;
-  return std::unique_ptr<CarelessController>(new CarelessController(resolution_, writer_, newcurrent, newbid, newseeds));
+  return new CarelessController(resolution_, writer_, newcurrent, newbid, newseeds);
 }
 
 void CarelessController::FusionP(const Delta& delta) {
