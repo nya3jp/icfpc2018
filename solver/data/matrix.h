@@ -30,6 +30,9 @@ class Matrix {
     return *this;
   }
 
+  bool operator==(const Matrix& other) const;
+  bool operator!=(const Matrix& other) const;
+
   static Matrix FromResolution(int resolution);
 
   bool IsZeroSized() const { return resolution_ == 0; }

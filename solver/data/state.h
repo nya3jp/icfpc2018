@@ -44,7 +44,8 @@ class BotState {
 class FieldState {
  public:
   FieldState(Matrix target, Matrix matrix, std::map<int, BotState> bots)
-      : target_(std::move(target)),
+      : energy_(0),
+        target_(std::move(target)),
         matrix_(std::move(matrix)),
         bots_(std::move(bots)),
         harmonics_(Harmonics::LOW) {}
@@ -74,10 +75,14 @@ class FieldState {
 
   bool IsHalted() const { return bots_.empty(); }
 
+  uint64_t energy() const { return energy_; }
+  void IncrementEnergy(int diff) { energy_ += diff; }
+
   bool IsHarmonicsLow() const { return harmonics_ == Harmonics::LOW; }
   void FlipHarmonics() { harmonics_ = harmonics_ == Harmonics::LOW ? Harmonics::HIGH : Harmonics::LOW; }
 
  private:
+  uint64_t energy_;
   enum class Harmonics { LOW, HIGH };
   const Matrix target_;
   Matrix matrix_;

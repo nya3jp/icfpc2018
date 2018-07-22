@@ -36,8 +36,8 @@ struct Action {
   static Action Flip() {
     return Action(FLIP, 0, Point(), Region(), 0);
   }
-  static Action Move(int bot_id, const Point& point) {
-    return Action(MOVE, bot_id, point, Region(), 0);
+  static Action Move(int bot_id, const Point& point, int energy) {
+    return Action(MOVE, bot_id, point, Region(), energy);
   }
   static Action Fill(const Point& point) {
     return Action(FILL, 0, Point(), Region::FromPoint(point), 0);

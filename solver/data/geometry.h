@@ -35,7 +35,7 @@ struct Delta {
     return std::max(std::abs(dx), std::max(std::abs(dy), std::abs(dz)));
   }
   inline bool IsNear() const {
-    return Manhattan() <= 2 && Chessboard() == 1;
+    return !IsZero() && Manhattan() <= 2 && Chessboard() == 1;
   }
   inline bool IsFar() const {
     return !IsZero() && Chessboard() <= FAR_LEN;
@@ -64,10 +64,10 @@ struct LinearDelta {
   }
 
   inline bool IsShort() const {
-    return std::abs(delta) <= SHORT_LEN;
+    return delta != 0 && std::abs(delta) <= SHORT_LEN;
   }
   inline bool IsLong() const {
-    return std::abs(delta) <= LONG_LEN;
+    return delta != 0 && std::abs(delta) <= LONG_LEN;
   }
 };
 

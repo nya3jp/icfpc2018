@@ -172,9 +172,18 @@ const std::vector<Action> TickExecutor::Commander::GetAction() {
         break;
 
       case Command::LMOVE:
+        {
+          int energy = 2 * (std::abs(command.ld1.delta) + 2 + std::abs(command.ld2.delta));
+          actions.push_back(Action::Move(bot_id, target, energy));
+          break;
+        }
+
       case Command::SMOVE:
-        actions.push_back(Action::Move(bot_id, target));
-        break;
+        {
+          int energy = 2 * std::abs(command.ld1.delta);
+          actions.push_back(Action::Move(bot_id, target, energy));
+          break;
+        }
 
       case Command::FILL:
         actions.push_back(Action::Fill(target));
@@ -222,6 +231,12 @@ void TickExecutor::Run(FieldState* field, TraceWriter* writer) {
   Commander commander(field);
   strategy_->Decide(&commander);
 
+  field->IncrementEnergy((field->IsHarmonicsLow() ? 3 : 30) *
+                         field->matrix().Resolution() *
+                         field->matrix().Resolution() *
+                         field->matrix().Resolution());
+  field->IncrementEnergy(20 * field->bots().size());
+
   for (const auto& action : commander.GetAction()) {
     ApplyAction(field, action);
   }
@@ -247,14 +262,23 @@ void TickExecutor::ApplyAction(FieldState* field, const Action& action) {
       break;
 
     case Action::MOVE:
-      bots.at(action.bot_id).set_position(action.point);
-      break;
+      {
+        int energy = action.arg;
+        bots.at(action.bot_id).set_position(action.point);
+        field->IncrementEnergy(energy);
+        break;
+      }
 
     case Action::FILL:
       for (int x = action.region.mini.x; x <= action.region.maxi.x; ++x) {
         for (int y = action.region.mini.y; y <= action.region.maxi.y; ++y) {
           for (int z = action.region.mini.z; z <= action.region.maxi.z; ++z) {
-            field->matrix().Set(x, y, z, true);
+            if (!field->matrix().Get(x, y, z)) {
+              field->matrix().Set(x, y, z, true);
+              field->IncrementEnergy(12);
+            } else {
+              field->IncrementEnergy(6);
+            }
           }
         }
       }
@@ -264,7 +288,12 @@ void TickExecutor::ApplyAction(FieldState* field, const Action& action) {
       for (int x = action.region.mini.x; x <= action.region.maxi.x; ++x) {
         for (int y = action.region.mini.y; y <= action.region.maxi.y; ++y) {
           for (int z = action.region.mini.z; z <= action.region.maxi.z; ++z) {
-            field->matrix().Set(x, y, z, false);
+            if (field->matrix().Get(x, y, z)) {
+              field->matrix().Set(x, y, z, false);
+              field->IncrementEnergy(-12);
+            } else {
+              field->IncrementEnergy(3);
+            }
           }
         }
       }
@@ -285,6 +314,7 @@ void TickExecutor::ApplyAction(FieldState* field, const Action& action) {
         }
         bots.at(action.bot_id).set_seeds(seeds);
         bots.insert(std::make_pair(new_bot_id, BotState(new_bot_id, new_seeds, action.point)));
+        field->IncrementEnergy(24);
         break;
       }
 
@@ -295,6 +325,7 @@ void TickExecutor::ApplyAction(FieldState* field, const Action& action) {
         seeds |= static_cast<uint64_t>(1) << slave_id;
         seeds |= bots.at(slave_id).seeds();
         bots.erase(slave_id);
+        field->IncrementEnergy(-24);
         break;
       }
   }

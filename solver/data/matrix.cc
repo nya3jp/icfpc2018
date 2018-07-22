@@ -56,3 +56,11 @@ void Matrix::Set(int x, int y, int z, bool value) {
 Matrix Matrix::Copy() const {
   return Matrix(resolution_, data_);
 }
+
+bool Matrix::operator==(const Matrix& other) const {
+  return resolution_ == other.resolution_ && data_ == other.data_;
+}
+
+bool Matrix::operator!=(const Matrix& other) const {
+  return !(*this == other);
+}
