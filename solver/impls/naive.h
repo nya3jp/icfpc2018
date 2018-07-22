@@ -1,14 +1,18 @@
 #ifndef SOLVER_IMPLS_NAIVE_H
 #define SOLVER_IMPLS_NAIVE_H
 
-#include "solver/data/model.h"
+#include "glog/logging.h"
+
+#include "solver/data/matrix.h"
 #include "solver/impls/base.h"
 #include "solver/support/careless_controller.h"
 
 class NaiveSolver : public Solver {
  public:
-  NaiveSolver(const Model* model, TraceWriter* writer)
-      : model_(model), controller_(model->Resolution(), writer) {}
+  NaiveSolver(const Matrix* source, const Matrix* target, TraceWriter* writer)
+      : model_(target), controller_(target->Resolution(), writer) {
+    CHECK(source->IsEmpty()) << "Can solve assembly problem only";
+  }
   NaiveSolver(const NaiveSolver& other) = delete;
 
   virtual void Solve();
@@ -16,7 +20,7 @@ class NaiveSolver : public Solver {
  private:
   const Point& Current() const;
 
-  const Model* const model_;
+  const Matrix* const model_;
   CarelessController controller_;
 };
 

@@ -1,8 +1,14 @@
 #include "solver/io/model_reader.h"
 
+#include <fstream>
+#include <iostream>
+
 #include "glog/logging.h"
 
-Model ReadModel(std::istream& is) {
+Matrix ReadModel(const std::string& path) {
+  std::ifstream is(path);
+  CHECK(is);
+
   int resolution;
   {
     uint8_t b;
@@ -25,5 +31,5 @@ Model ReadModel(std::istream& is) {
     }
   }
 
-  return Model(resolution, std::move(data));
+  return Matrix(resolution, std::move(data));
 }

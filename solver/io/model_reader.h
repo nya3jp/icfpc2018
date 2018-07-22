@@ -1,10 +1,10 @@
 #ifndef SOLVER_IO_MODEL_READER_H
 #define SOLVER_IO_MODEL_READER_H
 
-#include <iostream>
+#include <string>
 
-#include "solver/data/model.h"
+#include "solver/data/matrix.h"
 
-Model ReadModel(std::istream& is);
+Matrix ReadModel(const std::string& path);
 
 #endif //SOLVER_IO_MODEL_READER_H

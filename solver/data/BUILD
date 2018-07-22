@@ -2,8 +2,8 @@ package(default_visibility=["//visibility:public"])
 
 cc_library(
     name = "model",
-    srcs = ["model.cc"],
-    hdrs = ["model.h"],
+    srcs = ["matrix.cc"],
+    hdrs = ["matrix.h"],
     deps = [
         "@com_github_google_glog//:glog",
     ],
