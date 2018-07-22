@@ -1,31 +1,31 @@
-#include "solver/io/trace_writer.h"
+#include "solver/io/trace_writer_impl.h"
 
 #include "glog/logging.h"
 
 // To enable logging, specify: --vmodule=trace_writer=1
 
-void TraceWriter::Halt() {
+void TraceWriterImpl::Halt() {
   WriteByte(0b11111111);
   if (VLOG_IS_ON(1)) {  // See comment at the top
     VLOG(1) << "Halt";
   }
 }
 
-void TraceWriter::Wait() {
+void TraceWriterImpl::Wait() {
   WriteByte(0b11111110);
   if (VLOG_IS_ON(1)) {  // See comment at the top
     VLOG(1) << "Wait";
   }
 }
 
-void TraceWriter::Flip() {
+void TraceWriterImpl::Flip() {
   WriteByte(0b11111101);
   if (VLOG_IS_ON(1)) {  // See comment at the top
     VLOG(1) << "Flip";
   }
 }
 
-void TraceWriter::SMove(const LinearDelta& lld) {
+void TraceWriterImpl::SMove(const LinearDelta& lld) {
   CHECK(lld.IsLong()) << lld;
   WriteByte(0b00000100 | ((static_cast<int>(lld.axis) + 1) << 4));
   WriteByte(lld.delta + LONG_LEN);
@@ -34,7 +34,7 @@ void TraceWriter::SMove(const LinearDelta& lld) {
   }
 }
 
-void TraceWriter::LMove(const LinearDelta& sld1, const LinearDelta& sld2) {
+void TraceWriterImpl::LMove(const LinearDelta& sld1, const LinearDelta& sld2) {
   CHECK(sld1.IsShort()) << sld1;
   CHECK(sld2.IsShort()) << sld2;
   WriteByte(0b00001100 | ((static_cast<int>(sld1.axis) + 1) << 4) | ((static_cast<int>(sld2.axis) + 1) << 6));
@@ -44,7 +44,7 @@ void TraceWriter::LMove(const LinearDelta& sld1, const LinearDelta& sld2) {
   }
 }
 
-void TraceWriter::Fill(const Delta& nd) {
+void TraceWriterImpl::Fill(const Delta& nd) {
   CHECK(nd.IsNear()) << nd;
   WriteByte(0b00000011 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
   if (VLOG_IS_ON(1)) {  // See comment at the top
@@ -52,7 +52,7 @@ void TraceWriter::Fill(const Delta& nd) {
   }
 }
 
-void TraceWriter::Void(const Delta& nd) {
+void TraceWriterImpl::Void(const Delta& nd) {
   CHECK(nd.IsNear()) << nd;
   WriteByte(0b00000010 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
   if (VLOG_IS_ON(1)) {  // See comment at the top
@@ -60,7 +60,7 @@ void TraceWriter::Void(const Delta& nd) {
   }
 }
 
-void TraceWriter::Fission(const Delta& nd, int nchildren) {
+void TraceWriterImpl::Fission(const Delta& nd, int nchildren) {
   CHECK(nd.IsNear()) << nd;
   WriteByte(0b00000101 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
   WriteByte(nchildren);
@@ -69,7 +69,7 @@ void TraceWriter::Fission(const Delta& nd, int nchildren) {
   }
 }
 
-void TraceWriter::FusionP(const Delta& nd) {
+void TraceWriterImpl::FusionP(const Delta& nd) {
   CHECK(nd.IsNear()) << nd;
   WriteByte(0b00000111 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
   if (VLOG_IS_ON(1)) {  // See comment at the top
@@ -77,7 +77,7 @@ void TraceWriter::FusionP(const Delta& nd) {
   }
 }
 
-void TraceWriter::FusionS(const Delta& nd) {
+void TraceWriterImpl::FusionS(const Delta& nd) {
   CHECK(nd.IsNear()) << nd;
   WriteByte(0b00000110 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
   if (VLOG_IS_ON(1)) {  // See comment at the top
@@ -85,7 +85,7 @@ void TraceWriter::FusionS(const Delta& nd) {
   }
 }
 
-void TraceWriter::Gfill(const Delta& nd, const Delta& fd) {
+void TraceWriterImpl::Gfill(const Delta& nd, const Delta& fd) {
   CHECK(nd.IsNear()) << nd;
   CHECK(fd.IsFar()) << fd;
   WriteByte(0b00000001 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
@@ -97,7 +97,7 @@ void TraceWriter::Gfill(const Delta& nd, const Delta& fd) {
   }
 }
 
-void TraceWriter::Gvoid(const Delta& nd, const Delta& fd) {
+void TraceWriterImpl::Gvoid(const Delta& nd, const Delta& fd) {
   CHECK(nd.IsNear()) << nd;
   CHECK(fd.IsFar()) << fd;
   WriteByte(0b00000000 | ((((nd.dx + 1) * 9 + (nd.dy + 1) * 3 + (nd.dz + 1))) << 3));
@@ -109,7 +109,7 @@ void TraceWriter::Gvoid(const Delta& nd, const Delta& fd) {
   }
 }
 
-void TraceWriter::Command(const struct Command& command) {
+void TraceWriterImpl::Command(const struct Command& command) {
   switch (command.type) {
     case Command::HALT:
       Halt();
@@ -152,6 +152,6 @@ void TraceWriter::Command(const struct Command& command) {
   }
 }
 
-void TraceWriter::WriteByte(uint8_t b) {
+void TraceWriterImpl::WriteByte(uint8_t b) {
   os_.write(reinterpret_cast<char*>(&b), 1);
 }

@@ -4,15 +4,15 @@
 
 void CarelessController::Halt() {
   CHECK(current_.IsOrigin());
-  writer_->Halt();
+  writer_->Command(Command::Halt());
 }
 
 void CarelessController::Wait() {
-  writer_->Wait();
+  writer_->Command(Command::Wait());
 }
 
 void CarelessController::Flip() {
-  writer_->Flip();
+  writer_->Command(Command::Flip());
 }
 
 void CarelessController::MoveDelta(const Delta &delta) {
@@ -29,14 +29,14 @@ void CarelessController::MoveDelta(const Delta &delta) {
 
   if (linears.size() == 2 &&
       std::max(std::abs(linears[0].delta), std::abs(linears[1].delta)) <= SHORT_LEN) {
-    writer_->LMove(linears[0], linears[1]);
+    writer_->Command(Command::LMove(linears[0], linears[1]));
   } else {
     for (auto linear : linears) {
       while (linear.delta != 0) {
         LinearDelta move{
             linear.axis,
             std::max(std::min(linear.delta, LONG_LEN), -LONG_LEN)};
-        writer_->SMove(move);
+        writer_->Command(Command::SMove(move));
         linear.delta -= move.delta;
       }
     }
@@ -53,7 +53,7 @@ void CarelessController::MoveTo(const Point& destination) {
 
 void CarelessController::FillBelow() {
   CHECK(current_.y > 0);
-  writer_->Fill(Delta{0, -1, 0});
+  writer_->Command(Command::Fill(Delta{0, -1, 0}));
 }
 
 void CarelessController::VerifyCurrent() const {
@@ -67,7 +67,7 @@ CarelessController* CarelessController::Fission(const Delta& delta, int nchildre
   CHECK(delta.IsNear());
   Point newcurrent = current_ + delta;
   CHECK(__builtin_popcountl(seeds_) >= nchildren + 1) << bid_ << " " << seeds_ << " " << nchildren;
-  writer_->Fission(delta, nchildren);
+  writer_->Command(Command::Fission(delta, nchildren));
 
   uint64_t newbid = __builtin_ctzl(seeds_);
   seeds_ ^= static_cast<uint64_t>(1) << newbid;
@@ -82,24 +82,24 @@ CarelessController* CarelessController::Fission(const Delta& delta, int nchildre
 
 void CarelessController::FusionP(const Delta& delta) {
   CHECK(delta.IsNear()) << delta;
-  writer_->FusionP(delta);
+  writer_->Command(Command::FusionP(delta));
 }
 
 void CarelessController::FusionS(const Delta& delta) {
   CHECK(delta.IsNear()) << delta;
-  writer_->FusionS(delta);
+  writer_->Command(Command::FusionS(delta));
 }
 
 void CarelessController::Gfill(const Delta& nd, const Delta& fd) {
   CHECK(nd.IsNear()) << nd;
   CHECK(fd.IsFar()) << fd;
-  writer_->Gfill(nd, fd);
+  writer_->Command(Command::GFill(nd, fd));
 }
 
 void CarelessController::Gvoid(const Delta& nd, const Delta& fd) {
   CHECK(nd.IsNear()) << nd;
   CHECK(fd.IsFar()) << fd;
-  writer_->Gvoid(nd, fd);
+  writer_->Command(Command::GVoid(nd, fd));
 }
 
 bool CarelessController::operator<(const CarelessController& o) const {

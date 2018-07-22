@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "solver/data/command.h"
 #include "solver/data/geometry.h"
 #include "solver/io/trace_writer.h"
 

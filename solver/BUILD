@@ -5,7 +5,7 @@ cc_binary(
         "//solver/data:geometry",
         "//solver/data:matrix",
         "//solver/io:model_reader",
-        "//solver/io:trace_writer",
+        "//solver/io:trace_writer_impl",
         "//solver/impls:base",
         "//solver/impls:bbgvoid",
         "//solver/impls:task_executor_example",

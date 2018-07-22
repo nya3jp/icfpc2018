@@ -14,7 +14,7 @@
 #include "solver/impls/naive.h"
 #include "solver/impls/tick_executor_example.h"
 #include "solver/io/model_reader.h"
-#include "solver/io/trace_writer.h"
+#include "solver/io/trace_writer_impl.h"
 
 DEFINE_string(source, "", "Path to source model file");
 DEFINE_string(target, "", "Path to target model file");
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   }
 
   std::ofstream fout(FLAGS_output.c_str());
-  TraceWriter writer(fout);
+  TraceWriterImpl writer(fout);
 
   auto solver = CreateSolver(FLAGS_impl, &source, &target, &writer);
   solver->Solve();
