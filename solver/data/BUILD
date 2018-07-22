@@ -34,5 +34,6 @@ cc_library(
     hdrs = ["command.h"],
     deps = [
         ":geometry",
+        "@com_github_google_glog//:glog",
     ],
 )
