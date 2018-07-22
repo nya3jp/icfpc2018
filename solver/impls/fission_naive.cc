@@ -40,6 +40,35 @@ class InitFissionTask : public Task {
   }
 };
 
+class FinalFusionTask : public Task {
+ public:
+  FinalFusionTask() = default;
+  FinalFusionTask(const FinalFusionTask& other) = delete;
+
+  bool Decide(Commander* commander) override {
+    const auto& bots = commander->field()->bots();
+    int num_bots = static_cast<int>(bots.size());
+    CHECK(num_bots >= 2);
+
+    for (int bot_id = 0; bot_id < num_bots; ++bot_id) {
+      const auto& bot = bots.find(bot_id)->second;
+      CHECK_EQ(bot.position(), Point(bot_id, 0, 0));
+    }
+
+    const auto& primary_bot = bots.find(num_bots - 2)->second;
+    const auto& secondary = bots.find(num_bots - 1)->second;
+
+    bool primary_success = commander->Set(
+        num_bots - 2, Command::FusionP(Delta(1, 0, 0)));
+    bool secondary_success = commander->Set(
+        num_bots - 1, Command::FusionS(Delta(-1, 0, 0)));
+    CHECK(primary_success);
+    CHECK(secondary_success);
+
+    return num_bots == 2;
+  }
+};
+
 class FlipTask : public Task {
  public:
   FlipTask() = default;
@@ -160,6 +189,17 @@ class FillTask : public Task {
  private:
   const int bot_id_;
   const Delta nd_;
+};
+
+class HaltTask : public Task {
+ public:
+  HaltTask() = default;
+  HaltTask(const HaltTask &other) = delete;
+
+  bool Decide(Commander* commander) override {
+    commander->Set(0, Command::Halt());
+    return true;
+  }
 };
 
 class PrintTask : public Task {
@@ -290,7 +330,11 @@ class MainTask : public Task {
 };
 
 TaskPtr CreateMasterTask() {
-  return MakeSequenceTask(new InitFissionTask(), new MainTask());
+  return MakeSequenceTask(
+      new InitFissionTask(),
+      new MainTask(),
+      new FinalFusionTask(),
+      new HaltTask());
 }
 
 }  // namespace

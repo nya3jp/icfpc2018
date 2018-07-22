@@ -47,7 +47,7 @@ class BarrierTask : public Task {
 
 class MockTask : public Task {
  public:
-  MockTask() {}
+  MockTask() = default;
   MockTask(const MockTask& other) = delete;
 
   bool Decide(Commander* commander) override {
@@ -93,12 +93,12 @@ std::vector<TaskPtr> MakeTaskList(Args&&... args) {
 
 template<class... Args>
 TaskPtr MakeSequenceTask(Args&&... args) {
-  return TaskPtr(new SequenceTask(MakeTaskList(std::forward<Args>(args)...)));
+  return MakeTask(new SequenceTask(MakeTaskList(std::forward<Args>(args)...)));
 }
 
 template<class... Args>
 TaskPtr MakeBarrierTask(Args&&... args) {
-  return TaskPtr(new BarrierTask(MakeTaskList(std::forward<Args>(args)...)));
+  return MakeTask(new BarrierTask(MakeTaskList(std::forward<Args>(args)...)));
 }
 
 #endif //SOLVER_SUPPORT_TASK_H
