@@ -4,8 +4,8 @@
 
 #include "glog/logging.h"
 
+#include "solver/support/task.h"
 #include "solver/support/task_executor.h"
-#include "solver/support/tasks/base.h"
 
 TaskExecutorExampleSolver::TaskExecutorExampleSolver(
     const Matrix* source, const Matrix* target, TraceWriter* writer)

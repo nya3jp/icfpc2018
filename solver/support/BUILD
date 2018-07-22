@@ -30,10 +30,20 @@ cc_library(
     srcs = ["task_executor.cc"],
     hdrs = ["task_executor.h"],
     deps = [
+        ":task",
         ":tick_executor",
         "//solver/data:state",
         "//solver/io:trace_writer",
-        "//solver/support/tasks:base",
+        "@com_github_google_glog//:glog",
+    ],
+)
+
+cc_library(
+    name = "task",
+    srcs = ["task.cc"],
+    hdrs = ["task.h"],
+    deps = [
+        "//solver/support:tick_executor",
         "@com_github_google_glog//:glog",
     ],
 )

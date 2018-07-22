@@ -1,4 +1,4 @@
-#include "solver/support/tasks/base.h"
+#include "solver/support/task.h"
 
 #include "glog/logging.h"
 

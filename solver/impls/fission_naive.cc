@@ -6,7 +6,7 @@
 
 #include "solver/data/state.h"
 #include "solver/support/task_executor.h"
-#include "solver/support/tasks/base.h"
+#include "solver/support/task.h"
 
 namespace {
 

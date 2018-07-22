@@ -1,5 +1,5 @@
-#ifndef SOLVER_SUPPORT_TASKS_BASE_H
-#define SOLVER_SUPPORT_TASKS_BASE_H
+#ifndef SOLVER_SUPPORT_TASK_H
+#define SOLVER_SUPPORT_TASK_H
 
 #include <functional>
 #include <memory>
@@ -101,4 +101,4 @@ TaskPtr MakeBarrierTask(Args&&... args) {
   return TaskPtr(new BarrierTask(MakeTaskList(std::forward<Args>(args)...)));
 }
 
-#endif //SOLVER_SUPPORT_TASKS_BASE_H
+#endif //SOLVER_SUPPORT_TASK_H

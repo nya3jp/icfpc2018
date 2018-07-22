@@ -3,7 +3,7 @@
 
 #include "solver/data/state.h"
 #include "solver/io/trace_writer.h"
-#include "solver/support/tasks/base.h"
+#include "solver/support/task.h"
 #include "solver/support/tick_executor.h"
 
 class TaskExecutor : public TickExecutor::Strategy {

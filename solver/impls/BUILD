@@ -56,8 +56,8 @@ cc_library(
         "//solver/data:matrix",
         "//solver/data:state",
         "//solver/io:trace_writer",
+        "//solver/support:task",
         "//solver/support:task_executor",
-        "//solver/support/tasks:base",
         "@com_github_google_glog//:glog",
     ],
 )
@@ -71,8 +71,8 @@ cc_library(
         "//solver/data:matrix",
         "//solver/data:state",
         "//solver/io:trace_writer",
+        "//solver/support:task",
         "//solver/support:task_executor",
-        "//solver/support/tasks:base",
         "@com_github_google_glog//:glog",
     ],
 )
