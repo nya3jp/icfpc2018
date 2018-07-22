@@ -462,6 +462,9 @@ struct State{
         }
       }
     }
+    if (masters.size() != slaves.size()) {
+      throw std::runtime_error("fusion master/slave unmatch");
+    }
     for(auto& kv : masters){
       auto& key = kv.first;
       auto& bot = kv.second;
@@ -570,11 +573,11 @@ int main(int argc, char *argv[]){
         if(code0 & 8){
           int delta1 = (int)(code1 & 0xf) - 5;
           int delta2 = (int)((code1 >> 4) & 0xf) - 5;
-          if(delta1 == 0 || delta1 > 5){
+          if(delta1 == 0 || delta1 > 5 || delta1 < -5){
             std::cerr << "invalid sld1 at pos " << nbt.tellg() << std::endl;
             return 1;
           }
-          if(delta2 == 0 || delta2 > 5){
+          if(delta2 == 0 || delta2 > 5 || delta2 < -5){
             std::cerr << "invalid sld2 at pos " << nbt.tellg() << std::endl;
             return 1;
           }
@@ -583,7 +586,7 @@ int main(int argc, char *argv[]){
           cmd.ld2 = LinearDelta(static_cast<Axis>(axis2), delta2);
         }else{
           int delta1 = (int)code1 - 15;
-          if(delta1 == 0 || delta1 > 15){
+          if(delta1 == 0 || delta1 > 15 || delta1 < -15){
             std::cerr << "invalid lld at pos " << nbt.tellg() << std::endl;
             return 1;
           }
@@ -621,7 +624,7 @@ int main(int argc, char *argv[]){
           nbt.read((char *)&code1, 1);
           int dz = (int)code1 - 30;
           if((dx == 0 && dy == 0 && dz == 0) ||
-             dx > 30 || dy > 30 || dz > 30){
+             dx > 30 || dy > 30 || dz > 30 || dx < -30 || dy < -30 || dz < -30){
             std::cerr << "invalid fd at pos " << nbt.tellg() << std::endl;
             return 1;
           }
