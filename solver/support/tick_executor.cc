@@ -2,7 +2,7 @@
 
 bool TickExecutor::Commander::Set(int bot_id, const Command& command) {
   // TODO(nya): Check feasibility of command!
-  CHECK(0 <= bot_id && bot_id < static_cast<int>(commands_.size()));
+  CHECK(commands_.count(bot_id) > 0);
   commands_[bot_id] = command;
   return true;
 }

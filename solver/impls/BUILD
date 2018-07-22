@@ -15,7 +15,6 @@ cc_library(
         "//solver/data:matrix",
         "//solver/io:trace_writer",
         "//solver/support:careless_controller",
-        "@com_github_gflags_gflags//:gflags",
         "@com_github_google_glog//:glog",
     ],
 )
@@ -30,7 +29,20 @@ cc_library(
         "//solver/data:matrix",
         "//solver/io:trace_writer",
         "//solver/support:careless_controller",
-        "@com_github_gflags_gflags//:gflags",
+        "@com_github_google_glog//:glog",
+    ],
+)
+
+cc_library(
+    name = "tick_executor_example",
+    srcs = ["tick_executor_example.cc"],
+    hdrs = ["tick_executor_example.h"],
+    deps = [
+        ":base",
+        "//solver/data:matrix",
+        "//solver/data:state",
+        "//solver/io:trace_writer",
+        "//solver/support:tick_executor",
         "@com_github_google_glog//:glog",
     ],
 )

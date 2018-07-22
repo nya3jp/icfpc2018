@@ -15,7 +15,7 @@ class NaiveSolver : public Solver {
   }
   NaiveSolver(const NaiveSolver& other) = delete;
 
-  virtual void Solve();
+  void Solve() override;
 
  private:
   const Point& Current() const;

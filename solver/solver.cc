@@ -9,8 +9,9 @@
 
 #include "solver/data/matrix.h"
 #include "solver/impls/base.h"
-#include "solver/impls/naive.h"
 #include "solver/impls/bbgvoid.h"
+#include "solver/impls/naive.h"
+#include "solver/impls/tick_executor_example.h"
 #include "solver/io/model_reader.h"
 #include "solver/io/trace_writer.h"
 
@@ -26,6 +27,9 @@ std::unique_ptr<Solver> CreateSolver(
   }
   if (name == "bbgvoid") {
     return std::unique_ptr<Solver>(new BBGvoidSolver(source, target, writer));
+  }
+  if (name == "tick_executor_example") {
+    return std::unique_ptr<Solver>(new TickExecutorExampleSolver(source, target, writer));
   }
   LOG(FATAL) << "No solver impl found. Set --impl correctly.";
   return nullptr;
