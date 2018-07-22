@@ -7,12 +7,12 @@ const PRESENT_ELEMENT_IDS = [
   'stepsPerFrame',
   'execTrace',
   'stdout',
-];
-const ABSENT_ELEMENT_IDS = [
   'full',
   'srcModelFileIn',
   'srcModelEmpty',
   'tgtModelEmpty',
+];
+const ABSENT_ELEMENT_IDS = [
 ];
 
 class MockElement {
@@ -168,17 +168,34 @@ function onUpdate(html) {
 }
 
 function main() {
-  if (process.argv.length !== 4) {
-    console.error('Usage: simulator <model> <trace>');
+  if (process.argv.length !== 5) {
+    console.error('Usage: simulator <srcmodel> <tgtmodel> <trace>');
     return;
   }
 
-  const modelPath = process.argv[2];
-  const tracePath = process.argv[3];
+  const srcModelPath = process.argv[2];
+  const tgtModelPath = process.argv[3];
+  const tracePath = process.argv[4];
 
-  tgtModelBData = new Uint8Array(fs.readFileSync(modelPath));
+  if (srcModelPath !== 'null') {
+    document.getElementById('srcModelEmpty').checked = false;
+    srcModelBData = new Uint8Array(fs.readFileSync(srcModelPath));
+  } else {
+    document.getElementById('srcModelEmpty').checked = true;
+    srcModelBData = null;
+  }
+
+  if (tgtModelPath !== 'null') {
+    document.getElementById('tgtModelEmpty').checked = false;
+    tgtModelBData = new Uint8Array(fs.readFileSync(tgtModelPath));
+  } else {
+    document.getElementById('tgtModelEmpty').checked = true;
+    tgtModelBData = null;
+  }
+
   traceBData = new Uint8Array(fs.readFileSync(tracePath));
 
+  document.getElementById('full').value = 'true';
   document.getElementById('stepsPerFrame').value = '1000000000';
   document.getElementById('stdout').addHtmlObserver(onUpdate);
   document.getElementById('execTrace').onclick();
