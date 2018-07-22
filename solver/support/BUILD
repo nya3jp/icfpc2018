@@ -23,3 +23,16 @@ cc_library(
         "@com_github_google_glog//:glog",
     ],
 )
+
+cc_library(
+    name = "action_executor",
+    srcs = ["action_executor.cc"],
+    hdrs = ["action_executor.h"],
+    deps = [
+        ":tick_executor",
+        "//solver/data:state",
+        "//solver/io:trace_writer",
+        "//solver/support/actions:base",
+        "@com_github_google_glog//:glog",
+    ],
+)

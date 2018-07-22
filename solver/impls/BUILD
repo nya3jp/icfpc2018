@@ -46,3 +46,18 @@ cc_library(
         "@com_github_google_glog//:glog",
     ],
 )
+
+cc_library(
+    name = "action_executor_example",
+    srcs = ["action_executor_example.cc"],
+    hdrs = ["action_executor_example.h"],
+    deps = [
+        ":base",
+        "//solver/data:matrix",
+        "//solver/data:state",
+        "//solver/io:trace_writer",
+        "//solver/support:action_executor",
+        "//solver/support/actions:mock",
+        "@com_github_google_glog//:glog",
+    ],
+)
