@@ -1,6 +1,16 @@
 package(default_visibility=["//visibility:public"])
 
 cc_library(
+    name = "model_reader",
+    srcs = ["model_reader.cc"],
+    hdrs = ["model_reader.h"],
+    deps = [
+        "//solver/data:model",
+        "@com_github_google_glog//:glog",
+    ],
+)
+
+cc_library(
     name = "trace_writer",
     srcs = ["trace_writer.cc"],
     hdrs = ["trace_writer.h"],

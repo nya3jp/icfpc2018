@@ -4,6 +4,7 @@ cc_binary(
     deps = [
         "//solver/data:geometry",
         "//solver/data:model",
+        "//solver/io:model_reader",
         "//solver/io:trace_writer",
         "//solver/impls:base",
         "//solver/impls:naive",

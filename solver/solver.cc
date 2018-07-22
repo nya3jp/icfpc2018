@@ -11,6 +11,7 @@
 #include "solver/impls/base.h"
 #include "solver/impls/naive.h"
 #include "solver/impls/bbgvoid.h"
+#include "solver/io/model_reader.h"
 #include "solver/io/trace_writer.h"
 
 DEFINE_string(model, "", "Path to input model file");
@@ -39,16 +40,16 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  std::unique_ptr<Model> model;
+  Model model;
   {
     std::ifstream fin(FLAGS_model.c_str());
-    model = Model::FromStream(fin);
+    model = ReadModel(fin);
   }
 
   std::ofstream fout(FLAGS_trace.c_str());
   TraceWriter writer(fout);
 
-  auto solver = CreateSolver(FLAGS_impl, model.get(), &writer);
+  auto solver = CreateSolver(FLAGS_impl, &model, &writer);
   solver->Solve();
 
   return 0;
