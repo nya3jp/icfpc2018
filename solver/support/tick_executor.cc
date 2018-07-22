@@ -251,9 +251,9 @@ void TickExecutor::ApplyAction(FieldState* field, const Action& action) {
       break;
 
     case Action::FILL:
-      for (int x = action.region.mini.x; x < action.region.maxi.x; ++x) {
-        for (int y = action.region.mini.y; y < action.region.maxi.y; ++y) {
-          for (int z = action.region.mini.z; z < action.region.maxi.z; ++z) {
+      for (int x = action.region.mini.x; x <= action.region.maxi.x; ++x) {
+        for (int y = action.region.mini.y; y <= action.region.maxi.y; ++y) {
+          for (int z = action.region.mini.z; z <= action.region.maxi.z; ++z) {
             field->matrix().Set(x, y, z, true);
           }
         }
@@ -261,9 +261,9 @@ void TickExecutor::ApplyAction(FieldState* field, const Action& action) {
       break;
 
     case Action::VOID:
-      for (int x = action.region.mini.x; x < action.region.maxi.x; ++x) {
-        for (int y = action.region.mini.y; y < action.region.maxi.y; ++y) {
-          for (int z = action.region.mini.z; z < action.region.maxi.z; ++z) {
+      for (int x = action.region.mini.x; x <= action.region.maxi.x; ++x) {
+        for (int y = action.region.mini.y; y <= action.region.maxi.y; ++y) {
+          for (int z = action.region.mini.z; z <= action.region.maxi.z; ++z) {
             field->matrix().Set(x, y, z, false);
           }
         }
