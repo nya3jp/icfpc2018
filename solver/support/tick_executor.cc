@@ -16,7 +16,7 @@ TickExecutor::Commander::Commander(const FieldState* field)
 
 void TickExecutor::Run(FieldState* field, TraceWriter* writer) {
   Commander commander(field);
-  strategy_->Decide(*field, &commander);
+  strategy_->Decide(&commander);
 
   for (const auto& pair : commander.commands()) {
     ApplyCommand(pair.first, pair.second, field);

@@ -28,7 +28,7 @@ class TickExecutor {
 
   class Strategy {
    public:
-    virtual void Decide(const FieldState& field, Commander* commander) = 0;
+    virtual void Decide(Commander* commander) = 0;
     
    protected:
     virtual ~Strategy() = default;
