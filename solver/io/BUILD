@@ -5,7 +5,7 @@ cc_library(
     srcs = ["model_reader.cc"],
     hdrs = ["model_reader.h"],
     deps = [
-        "//solver/data:model",
+        "//solver/data:matrix",
         "@com_github_google_glog//:glog",
     ],
 )
@@ -15,6 +15,7 @@ cc_library(
     srcs = ["trace_writer.cc"],
     hdrs = ["trace_writer.h"],
     deps = [
+        "//solver/data:command",
         "//solver/data:geometry",
         "@com_github_google_glog//:glog",
     ],

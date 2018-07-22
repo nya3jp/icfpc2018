@@ -35,6 +35,8 @@ class Matrix {
   bool Get(int x, int y, int z) const;
   int Resolution() const { return resolution_; }
 
+  void Set(int x, int y, int z, bool value);
+
  private:
   int resolution_;
   std::vector<bool> data_;

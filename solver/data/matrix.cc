@@ -21,3 +21,11 @@ bool Matrix::Get(int x, int y, int z) const {
       << "(" << x << ", " << y << ", " << z << "); resolution=" << resolution_;
   return data_[x * resolution_ * resolution_ + y * resolution_ + z];
 }
+
+void Matrix::Set(int x, int y, int z, bool value) {
+  CHECK(0 <= x && x < resolution_ &&
+        0 <= y && y < resolution_ &&
+        0 <= z && z < resolution_)
+      << "(" << x << ", " << y << ", " << z << "); resolution=" << resolution_;
+  data_[x * resolution_ * resolution_ + y * resolution_ + z] = value;
+}

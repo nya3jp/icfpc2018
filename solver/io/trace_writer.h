@@ -5,6 +5,7 @@
 
 #include <iostream>
 
+#include "solver/data/command.h"
 #include "solver/data/geometry.h"
 
 class TraceWriter {
@@ -24,6 +25,8 @@ class TraceWriter {
   void FusionS(const Delta& nd);
   void Gfill(const Delta& nd, const Delta& fd);
   void Gvoid(const Delta& nd, const Delta& fd);
+
+  void Command(const Command& command);
 
  private:
   void WriteByte(uint8_t b);

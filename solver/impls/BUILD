@@ -12,7 +12,7 @@ cc_library(
     deps = [
         ":base",
         "//solver/data:geometry",
-        "//solver/data:model",
+        "//solver/data:matrix",
         "//solver/io:trace_writer",
         "//solver/support:careless_controller",
         "@com_github_gflags_gflags//:gflags",
@@ -27,7 +27,7 @@ cc_library(
     deps = [
         ":base",
         "//solver/data:geometry",
-        "//solver/data:model",
+        "//solver/data:matrix",
         "//solver/io:trace_writer",
         "//solver/support:careless_controller",
         "@com_github_gflags_gflags//:gflags",

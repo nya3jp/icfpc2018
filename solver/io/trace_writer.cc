@@ -1,5 +1,7 @@
 #include "solver/io/trace_writer.h"
 
+#include "glog/logging.h"
+
 void TraceWriter::Halt() {
   WriteByte(0b11111111);
 }
@@ -73,6 +75,49 @@ void TraceWriter::Gvoid(const Delta& nd, const Delta& fd) {
   WriteByte(fd.dy + 30);
   WriteByte(fd.dz + 30);
   //LOG(ERROR) << "Gvoid";
+}
+
+void TraceWriter::Command(const struct Command& command) {
+  switch (command.type) {
+    case Command::HALT:
+      Halt();
+      break;
+    case Command::WAIT:
+      Wait();
+      break;
+    case Command::FLIP:
+      Flip();
+      break;
+    case Command::LMOVE:
+      LMove(command.ld1, command.ld2);
+      break;
+    case Command::SMOVE:
+      SMove(command.ld1);
+      break;
+    case Command::FILL:
+      Fill(command.nd);
+      break;
+    case Command::VOID:
+      Fill(command.nd);
+      break;
+    case Command::GFILL:
+      Gfill(command.nd, command.fd);
+      break;
+    case Command::GVOID:
+      Gvoid(command.nd, command.fd);
+      break;
+    case Command::FISSION:
+      Fission(command.nd, command.arg);
+      break;
+    case Command::FUSION_MASTER:
+      FusionP(command.nd);
+      break;
+    case Command::FUSION_SLAVE:
+      FusionS(command.nd);
+      break;
+    default:
+      LOG(FATAL) << "Malformed command type";
+  }
 }
 
 void TraceWriter::WriteByte(uint8_t b) {

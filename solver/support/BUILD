@@ -10,3 +10,16 @@ cc_library(
         "@com_github_google_glog//:glog",
     ],
 )
+
+cc_library(
+    name = "tick_executor",
+    srcs = ["tick_executor.cc"],
+    hdrs = ["tick_executor.h"],
+    deps = [
+        "//solver/data:command",
+        "//solver/data:geometry",
+        "//solver/data:state",
+        "//solver/io:trace_writer",
+        "@com_github_google_glog//:glog",
+    ],
+)
