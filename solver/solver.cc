@@ -10,8 +10,9 @@
 #include "solver/data/matrix.h"
 #include "solver/impls/base.h"
 #include "solver/impls/bbgvoid.h"
-#include "solver/impls/task_executor_example.h"
+#include "solver/impls/fission_naive.h"
 #include "solver/impls/naive.h"
+#include "solver/impls/task_executor_example.h"
 #include "solver/impls/tick_executor_example.h"
 #include "solver/io/model_reader.h"
 #include "solver/io/trace_writer_impl.h"
@@ -28,6 +29,9 @@ std::unique_ptr<Solver> CreateSolver(
   }
   if (name == "bbgvoid") {
     return std::unique_ptr<Solver>(new BBGvoidSolver(source, target, writer));
+  }
+  if (name == "fission_naive") {
+    return std::unique_ptr<Solver>(new FissionNaiveSolver(source, target, writer));
   }
   if (name == "tick_executor_example") {
     return std::unique_ptr<Solver>(new TickExecutorExampleSolver(source, target, writer));

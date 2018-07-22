@@ -1,8 +1,6 @@
 #ifndef SOLVER_SUPPORT_TASK_EXECUTOR_H
 #define SOLVER_SUPPORT_TASK_EXECUTOR_H
 
-#include <memory>
-
 #include "solver/data/state.h"
 #include "solver/io/trace_writer.h"
 #include "solver/support/tasks/base.h"
@@ -10,7 +8,7 @@
 
 class TaskExecutor : public TickExecutor::Strategy {
  public:
-  explicit TaskExecutor(std::unique_ptr<Task> task);
+  explicit TaskExecutor(TaskPtr task);
   TaskExecutor(const TaskExecutor& other) = delete;
 
   void Run(FieldState* field, TraceWriter* writer);
@@ -20,7 +18,7 @@ class TaskExecutor : public TickExecutor::Strategy {
 
  private:
   TickExecutor tick_executor_;
-  std::unique_ptr<Task> task_;
+  TaskPtr task_;
   bool done_ = false;
 };
 

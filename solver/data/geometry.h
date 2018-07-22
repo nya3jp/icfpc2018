@@ -40,6 +40,13 @@ struct Delta {
   inline bool IsFar() const {
     return !IsZero() && Chessboard() <= FAR_LEN;
   }
+
+  inline bool operator==(const Delta& o) const {
+    return dx == o.dx && dy == o.dy && dz == o.dz;
+  }
+  inline bool operator!=(const Delta& o) const {
+    return !(*this == o);
+  }
 };
 
 std::ostream& operator<<(std::ostream& os, const Delta& d);
@@ -68,6 +75,13 @@ struct LinearDelta {
   }
   inline bool IsLong() const {
     return delta != 0 && std::abs(delta) <= LONG_LEN;
+  }
+
+  inline bool operator==(const LinearDelta& o) const {
+    return axis == o.axis && delta == o.delta;
+  }
+  inline bool operator!=(const LinearDelta& o) const {
+    return !(*this == o);
   }
 };
 
@@ -129,6 +143,9 @@ struct Region {
   Point mini, maxi;
 
   Region() = default;
+  Region(const Point& mini, const Point& maxi) : mini(mini), maxi(maxi) {
+    Verify();
+  }
   static Region FromPoint(const Point& p);
   static Region FromPointDelta(const Point& p, const Delta& d);
 
@@ -149,11 +166,6 @@ struct Region {
   }
 
   void Verify() const;
-
- private:
-  Region(const Point& mini, const Point& maxi) : mini(mini), maxi(maxi) {
-    Verify();
-  }
 };
 
 std::ostream& operator<<(std::ostream& os, const Region& r);

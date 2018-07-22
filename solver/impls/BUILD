@@ -61,3 +61,18 @@ cc_library(
         "@com_github_google_glog//:glog",
     ],
 )
+
+cc_library(
+    name = "fission_naive",
+    srcs = ["fission_naive.cc"],
+    hdrs = ["fission_naive.h"],
+    deps = [
+        ":base",
+        "//solver/data:matrix",
+        "//solver/data:state",
+        "//solver/io:trace_writer",
+        "//solver/support:task_executor",
+        "//solver/support/tasks:base",
+        "@com_github_google_glog//:glog",
+    ],
+)

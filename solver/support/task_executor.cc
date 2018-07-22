@@ -2,7 +2,7 @@
 
 #include <utility>
 
-TaskExecutor::TaskExecutor(std::unique_ptr<Task> task)
+TaskExecutor::TaskExecutor(TaskPtr task)
     : tick_executor_(this), task_(std::move(task)) {
 }
 
