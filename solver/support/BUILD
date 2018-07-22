@@ -25,14 +25,14 @@ cc_library(
 )
 
 cc_library(
-    name = "action_executor",
-    srcs = ["action_executor.cc"],
-    hdrs = ["action_executor.h"],
+    name = "task_executor",
+    srcs = ["task_executor.cc"],
+    hdrs = ["task_executor.h"],
     deps = [
         ":tick_executor",
         "//solver/data:state",
         "//solver/io:trace_writer",
-        "//solver/support/actions:base",
+        "//solver/support/tasks:base",
         "@com_github_google_glog//:glog",
     ],
 )

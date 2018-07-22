@@ -10,6 +10,7 @@
 #include "solver/data/matrix.h"
 #include "solver/impls/base.h"
 #include "solver/impls/bbgvoid.h"
+#include "solver/impls/task_executor_example.h"
 #include "solver/impls/naive.h"
 #include "solver/impls/tick_executor_example.h"
 #include "solver/io/model_reader.h"
@@ -30,6 +31,9 @@ std::unique_ptr<Solver> CreateSolver(
   }
   if (name == "tick_executor_example") {
     return std::unique_ptr<Solver>(new TickExecutorExampleSolver(source, target, writer));
+  }
+  if (name == "task_executor_example") {
+    return std::unique_ptr<Solver>(new TaskExecutorExampleSolver(source, target, writer));
   }
   LOG(FATAL) << "No solver impl found. Set --impl correctly.";
   return nullptr;

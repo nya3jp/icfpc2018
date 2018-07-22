@@ -48,16 +48,16 @@ cc_library(
 )
 
 cc_library(
-    name = "action_executor_example",
-    srcs = ["action_executor_example.cc"],
-    hdrs = ["action_executor_example.h"],
+    name = "task_executor_example",
+    srcs = ["task_executor_example.cc"],
+    hdrs = ["task_executor_example.h"],
     deps = [
         ":base",
         "//solver/data:matrix",
         "//solver/data:state",
         "//solver/io:trace_writer",
-        "//solver/support:action_executor",
-        "//solver/support/actions:mock",
+        "//solver/support:task_executor",
+        "//solver/support/tasks:mock",
         "@com_github_google_glog//:glog",
     ],
 )

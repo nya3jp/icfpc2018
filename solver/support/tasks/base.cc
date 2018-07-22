@@ -1,7 +1,7 @@
-#include "solver/support/actions/base.h"
+#include "solver/support/tasks/base.h"
 
 // static
-Action::BotSet Action::MakeBotSet(const std::map<int, BotState>& bots) {
+Task::BotSet Task::MakeBotSet(const std::map<int, BotState>& bots) {
   BotSet botset;
   for (const auto& pair : bots) {
     botset.emplace(pair.first, &pair.second);
