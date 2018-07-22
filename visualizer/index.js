@@ -10,38 +10,35 @@
 
 window.addEventListener('DOMContentLoaded', init);
 
-function init() {
-    const width = 960;
-    const height = 540;
+const box_size = 8 / resolution;
+const grid_size = 10 / resolution;
+const geometry_box = new THREE.BoxGeometry(box_size, box_size, box_size);
 
-    const renderer = new THREE.WebGLRenderer({
-        canvas: document.querySelector('#myCanvas')
-    });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(width, height);
-    renderer.shadowMap.enabled = true;
+function generate_box(xi, yi, zi) {
+    const material_box = new THREE.MeshStandardMaterial({color: 0xffff00});
+    const box = new THREE.Mesh(geometry_box, material_box);
+    x = xi * grid_size;
+    y = yi * grid_size;
+    z = zi * grid_size;
+    box.castShadow = true;
+    box.receiveShadow = true;
+    box.position.set(x, y, z);
+    return box;
+}
 
+function g2c(i) {
+    zi = i % resolution;
+    yi = (i - zi) / resolution % resolution;
+    xi = (i - zi - yi * resolution) / (resolution * resolution);
+    return [xi, yi, zi];
+}
+
+function c2g(xi, yi, zi) {
+    return xi * resolution * resolution + yi * resolution + zi;
+}
+
+function generate_scene(width, height, renderer) {
     const scene = new THREE.Scene();
-
-    const camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, 1, 100000);
-    camera.position.set(5000, 5000, 5000);
-
-    document.body.appendChild(renderer.domElement);
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-    const box_size = 80;
-    const geometry_box = new THREE.BoxGeometry(box_size, box_size, box_size);
-
-    // Draw boxes.
-    for (var i = 0; i < coordinates_box.length; i++) {
-        c = coordinates_box[i]
-        const material_box = new THREE.MeshStandardMaterial({color: c[3]});
-        const box = new THREE.Mesh(geometry_box, material_box);
-        box.castShadow = true;
-        box.receiveShadow = true;
-        box.position.set(c[0], c[1], c[2]);
-        scene.add(box);
-    }
 
     // Draw grid lines.
     var material_line = new THREE.LineBasicMaterial({
@@ -49,37 +46,100 @@ function init() {
         transparent: true,
         opacity: 0.2
     });
-
-    for (var i = 0; i < coordinates_line.length; i++) {
+    start = - grid_size / 2;
+    end = resolution * grid_size - grid_size / 2;
+    function add_line(x0, y0, z0, x1, y1, z1) {
         var geometry_line = new THREE.Geometry();
-        c0 = coordinates_line[i][0]
-        c1 = coordinates_line[i][1]
         geometry_line.vertices.push(
-            new THREE.Vector3(c0[0], c0[1], c0[2]),
-            new THREE.Vector3(c1[0], c1[1], c1[2])
+            new THREE.Vector3(x0, y0, z0),
+            new THREE.Vector3(x1, y1, z1)
         );
         var line = new THREE.Line(geometry_line, material_line);
         scene.add(line);
     }
+    if (true) {  // Line drawing is heavy in large resolution.
+        stride = resolution
+    } else {
+        stride = 1
+    }
+    for (var i = 0; i <= resolution; i += stride) {
+        for (var j = 0; j <= resolution; j += stride) {
+            ci = (i - 0.5) * grid_size;
+            cj = (j - 0.5) * grid_size;
+            add_line(start, ci, cj, end, ci, cj);
+            add_line(ci, start, cj, ci, end, cj);
+            add_line(ci, cj, start, ci, cj, end);
+        }
+    }
 
     const light1 = new THREE.PointLight();
     const light2 = new THREE.PointLight();
-    //light1.castShadow = true;
-    //light2.castShadow = true;
     light1.intensity = 2;
     light2.intensity = 2;
-    light1.position.set(0, 10000, 0);
-    light2.position.set(-10000, -10000, -10000);
+    //light1.castShadow = true;
+    //light2.castShadow = true;
+    light1.position.set(-15, -15, -15);
+    light2.position.set(15, 15, 15);
     scene.add(light1);
     scene.add(light2);
 
-    var slider = document.getElementById("slider");
-    slider.addEventListener("input", changeIntensity);
+    return scene;
+}
 
-    function changeIntensity(e){
-        light1.intensity = e.target.value;
+function init() {
+    const width = 960;
+    const height = 540;
+    const renderer = new THREE.WebGLRenderer({
+        canvas: document.querySelector('#myCanvas')
+    });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(width, height);
+    renderer.shadowMap.enabled = true;
+
+    const camera = new THREE.OrthographicCamera(width / - 40, width / 40, height / 40, height / - 40, 0.1, 100);
+    camera.position.set(15, 15, 15);
+    document.body.appendChild(renderer.domElement);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    var scene = generate_scene(width, height, renderer);
+    var boxes = Array(resolution * resolution * resolution);
+    console.log(scene)
+
+    function changeFrame(i) {
+        for (var j = 0; j < simlog[i].length; j++) {
+            visual = simlog[i][j][0];
+            color = simlog[i][j][1];
+            if (visual == 'visible' & boxes[j] == undefined) {
+                coord_index = g2c(j);
+                box = generate_box(coord_index[0],
+                                   coord_index[1],
+                                   coord_index[2]);
+                boxes[j] = box;
+                scene.add(box);
+            }
+            if (visual == 'visible') {
+                boxes[j].visible = true;
+                boxes[j].material.color.setHex(color);
+            } else if (visual == 'invisible') {
+                boxes[j].visible = false;
+            } else if (visual == 'dispose') {
+                boxes[j].material.dispose();
+                scene.remove(boxes[j]);
+                boxes[j] = undefined;
+            }
+        }
     }
 
+    var slider = document.getElementById("slider");
+    slider.setAttribute("max", simlog.length - 1);
+    slider.addEventListener("input", changeFrameFromSlider);
+
+    function changeFrameFromSlider(e){
+        var i = e.target.value;
+        changeFrame(i);
+    }
+
+    changeFrame(0);
     tick();
 
     function tick() {
