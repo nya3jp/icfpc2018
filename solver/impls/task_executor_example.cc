@@ -14,7 +14,10 @@ TaskExecutorExampleSolver::TaskExecutorExampleSolver(
 }
 
 void TaskExecutorExampleSolver::Solve() {
-  TaskExecutor executor(MakeTask(new MockTask()));
+  TaskPtr task = MakeTask([](Task::Commander* commander) -> bool {
+    return true;
+  });
+  TaskExecutor executor(std::move(task));
   executor.Run(&field_, writer_);
   CHECK(field_.IsHalted()) << "Not halted, but expected";
 }

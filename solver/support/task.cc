@@ -2,6 +2,20 @@
 
 #include "glog/logging.h"
 
+namespace {
+
+class SequenceTask : public Task {
+ public:
+  explicit SequenceTask(std::vector<TaskPtr> tasks): tasks_(std::move(tasks)) {}
+  SequenceTask(const SequenceTask& other) = delete;
+
+  bool Decide(Commander* commander) override;
+
+ private:
+  std::vector<TaskPtr> tasks_;
+  size_t index_ = 0;
+};
+
 bool SequenceTask::Decide(Commander* commander) {
   if (index_ >= tasks_.size()) {
     LOG(ERROR) << "Task exhausted";
@@ -13,6 +27,17 @@ bool SequenceTask::Decide(Commander* commander) {
   }
   return index_ >= tasks_.size();
 }
+
+class BarrierTask : public Task {
+ public:
+  explicit BarrierTask(std::vector<TaskPtr> tasks) : tasks_(std::move(tasks)) {}
+  BarrierTask(const BarrierTask& other) = delete;
+
+  bool Decide(Commander* commander) override;
+
+ private:
+  std::vector<TaskPtr> tasks_;
+};
 
 bool BarrierTask::Decide(Commander* commander) {
   bool done = true;
@@ -28,6 +53,42 @@ bool BarrierTask::Decide(Commander* commander) {
   return done;
 }
 
+class FunctionTask : public Task {
+ public:
+  using FuncType = std::function<bool(TickExecutor::Commander*)>;
+
+  explicit FunctionTask(FuncType func) : func_(std::move(func)) {}
+  FunctionTask(const FunctionTask& other) = delete;
+
+  bool Decide(Commander* commander) override {
+    return func_(commander);
+  }
+
+ private:
+  FuncType func_;
+};
+
+class LazyFunctionTask : public Task {
+ public:
+  using FuncType = std::function<TaskPtr(TickExecutor::Commander*)>;
+
+  explicit LazyFunctionTask(FuncType func) : func_(std::move(func)) {}
+  LazyFunctionTask(const LazyFunctionTask& other) = delete;
+
+  bool Decide(Commander* commander) override {
+    if (!task_) {
+      task_ = func_(commander);
+    }
+    return task_->Decide(commander);
+  }
+
+ private:
+  FuncType func_;
+  TaskPtr task_;
+};
+
+}  // namespace
+
 TaskPtr MakeTask(TaskPtr task) {
   return task;
 }
@@ -38,4 +99,16 @@ TaskPtr MakeTask(Task* task) {
 
 TaskPtr MakeTask(std::function<bool(TickExecutor::Commander*)> func) {
   return TaskPtr(new FunctionTask(std::move(func)));
+}
+
+TaskPtr MakeTask(std::function<TaskPtr(TickExecutor::Commander*)> func) {
+  return TaskPtr(new LazyFunctionTask(std::move(func)));
+}
+
+TaskPtr MakeSequenceTask(std::vector<TaskPtr> subtasks) {
+  return TaskPtr(new SequenceTask(std::move(subtasks)));
+}
+
+TaskPtr MakeBarrierTask(std::vector<TaskPtr> subtasks) {
+  return TaskPtr(new BarrierTask(std::move(subtasks)));
 }
