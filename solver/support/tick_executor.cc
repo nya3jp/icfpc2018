@@ -247,7 +247,6 @@ void TickExecutor::ApplyAction(FieldState* field, const Action& action) {
       break;
 
     case Action::MOVE:
-      // TODO: collision, hamidashi check
       bots.at(action.bot_id).set_position(action.point);
       break;
 
