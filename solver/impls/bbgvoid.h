@@ -8,8 +8,8 @@
 class BBGvoidSolver : public Solver {
  public:
   BBGvoidSolver(const Matrix* source, const Matrix* target, TraceWriter* writer)
-      : model_(target), controller_(target->Resolution(), writer) {
-    CHECK(source->IsEmpty()) << "Can solve assembly problem only";
+      : model_(source), controller_(source->Resolution(), writer) {
+    CHECK(target->IsEmpty()) << "Can solve disassembly problem only";
   }
   BBGvoidSolver(const BBGvoidSolver& other) = delete;
 
