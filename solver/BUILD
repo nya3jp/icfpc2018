@@ -8,6 +8,7 @@ cc_binary(
         "//solver/io:trace_writer_impl",
         "//solver/impls:base",
         "//solver/impls:bbgvoid",
+        "//solver/impls:bbgvoid_task",
         "//solver/impls:fission_naive",
         "//solver/impls:naive",
         "//solver/impls:task_executor_example",

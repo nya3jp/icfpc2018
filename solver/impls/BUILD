@@ -34,6 +34,21 @@ cc_library(
 )
 
 cc_library(
+    name = "bbgvoid_task",
+    srcs = ["bbgvoid_task.cc"],
+    hdrs = ["bbgvoid_task.h"],
+    deps = [
+        ":base",
+        "//solver/data:geometry",
+        "//solver/data:state",
+        "//solver/io:trace_writer",
+        "//solver/support:task",
+        "//solver/support:task_executor",
+        "@com_github_google_glog//:glog",
+    ],
+)
+
+cc_library(
     name = "tick_executor_example",
     srcs = ["tick_executor_example.cc"],
     hdrs = ["tick_executor_example.h"],

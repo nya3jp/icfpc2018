@@ -10,6 +10,7 @@
 #include "solver/data/matrix.h"
 #include "solver/impls/base.h"
 #include "solver/impls/bbgvoid.h"
+#include "solver/impls/bbgvoid_task.h"
 #include "solver/impls/fission_naive.h"
 #include "solver/impls/naive.h"
 #include "solver/impls/task_executor_example.h"
@@ -29,6 +30,9 @@ std::unique_ptr<Solver> CreateSolver(
   }
   if (name == "bbgvoid") {
     return std::unique_ptr<Solver>(new BBGvoidSolver(source, target, writer));
+  }
+  if (name == "bbgvoid_task") {
+    return std::unique_ptr<Solver>(new BBGvoidTaskSolver(source, target, writer));
   }
   if (name == "fission_naive") {
     return std::unique_ptr<Solver>(new FissionNaiveSolver(source, target, writer));
