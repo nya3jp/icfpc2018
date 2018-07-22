@@ -5,7 +5,7 @@
 #include "glog/logging.h"
 
 #include "solver/support/task_executor.h"
-#include "solver/support/tasks/mock.h"
+#include "solver/support/tasks/base.h"
 
 TaskExecutorExampleSolver::TaskExecutorExampleSolver(
     const Matrix* source, const Matrix* target, TraceWriter* writer)
@@ -14,8 +14,7 @@ TaskExecutorExampleSolver::TaskExecutorExampleSolver(
 }
 
 void TaskExecutorExampleSolver::Solve() {
-  std::unique_ptr<Task> task(
-      new MockTask(Task::MakeBotSet(field_.bots())));
+  std::unique_ptr<Task> task(new MockTask());
   TaskExecutor executor(std::move(task));
   executor.Run(&field_, writer_);
   CHECK(field_.IsHalted()) << "Not halted, but expected";

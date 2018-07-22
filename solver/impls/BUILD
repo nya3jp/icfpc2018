@@ -57,7 +57,7 @@ cc_library(
         "//solver/data:state",
         "//solver/io:trace_writer",
         "//solver/support:task_executor",
-        "//solver/support/tasks:mock",
+        "//solver/support/tasks:base",
         "@com_github_google_glog//:glog",
     ],
 )
