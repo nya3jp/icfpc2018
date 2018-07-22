@@ -14,7 +14,7 @@ class Matrix {
     CHECK_EQ(static_cast<int>(data_.size()), resolution * resolution * resolution);
   }
 
-  // Matrix is movable but not copyable.
+  // Matrix is movable but not copyable by default. Use explicit Copy() instead.
   Matrix(const Matrix& other) = delete;
   Matrix(Matrix&& other) {
     *this = std::move(other);
@@ -36,6 +36,8 @@ class Matrix {
   int Resolution() const { return resolution_; }
 
   void Set(int x, int y, int z, bool value);
+
+  Matrix Copy() const;
 
  private:
   int resolution_;
