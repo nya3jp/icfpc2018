@@ -17,3 +17,13 @@ cc_library(
         ":base",
     ]
 )
+
+cc_library(
+    name = "sequence",
+    srcs = ["sequence.cc"],
+    hdrs = ["sequence.h"],
+    deps = [
+        ":base",
+        "@com_github_google_glog//:glog",
+    ]
+)

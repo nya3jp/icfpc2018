@@ -5,7 +5,7 @@
 
 class MockTask : public Task {
  public:
-  MockTask(const BotSet& bots) : Task(bots) {}
+  explicit MockTask(const BotSet& bots) : Task(bots) {}
   MockTask(const MockTask& other) = delete;
 
   bool Decide(Commander* commander) override {
