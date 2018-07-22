@@ -9,37 +9,63 @@ import sys
 ROOT_DIR = os.path.dirname(__file__)
 
 
-def _run_simulator(model_path, trace_path):
+def _run_simulator(src_model_path, tgt_model_path, trace_path):
     simulator_path = os.path.join(ROOT_DIR, 'bazel-bin', 'cxx_simulator', 'sim')
-    model_filter = '| gzip -d' if model_path.endswith('.gz') else ''
-    trace_filter = '| gzip -d' if trace_path.endswith('.gz') else ''
-    cmd = '"$0" <(cat "$1" %s) <(cat "$2" %s)' % (model_filter, trace_filter)
-    output = subprocess.check_output(['bash', '-c', cmd, simulator_path, model_path, trace_path])
+    cmds = ['"$0"']
+    args = []
+    if src_model_path is not None:
+        cmds.append('--source <(cat "${}" {})'.format(len(args) + 1, '| gzip -d' if src_model_path.endswith('.gz') else ''))
+        args.append(src_model_path)
+    if tgt_model_path is not None:
+        cmds.append('--target <(cat "${}" {})'.format(len(args) + 1, '| gzip -d' if tgt_model_path.endswith('.gz') else ''))
+        args.append(tgt_model_path)
+    cmds.append('--trace <(cat "${}" {})'.format(len(args) + 1, '| gzip -d' if trace_path.endswith('.gz') else ''))
+    args.append(trace_path)
+    cmd = ' '.join(cmds)
+    output = subprocess.check_output(['bash', '-c', cmd, simulator_path, *args])
+    time_str, energy_str = output.strip().split()
+    return int(time_str), int(energy_str)
+
+
+def _run_reference_simulator(src_model_path, tgt_model_path, trace_path):
+    simulator_path = os.path.join(ROOT_DIR, 'reference_simulator', 'simulator')
+    src_model_path = src_model_path if src_model_path is not None else 'null'
+    tgt_model_path = tgt_model_path if tgt_model_path is not None else 'null'
+    cmd = ' '.join(['"$0"',
+                    '<(cat "$1" | gzip -d)' if src_model_path.endswith('.gz') else '"$1"',
+                    '<(cat "$2" | gzip -d)' if tgt_model_path.endswith('.gz') else '"$2"',
+                    '<(cat "$3" | gzip -d)' if trace_path.endswith('.gz') else '"$3"'])
+    output = subprocess.check_output(['bash', '-c', cmd, simulator_path, src_model_path, tgt_model_path, trace_path])
     time_str, energy_str = output.strip().split()
     return int(time_str), int(energy_str)
 
 
 def main(argv):
-    if len(argv) != 3:
-        print('Usage: evaluate.py <model#> <trace-path>', file=sys.stderr)
+    if len(argv) != 4 or argv[1] not in ('A', 'D', 'R'):
+        print('Usage: evaluate.py <A|D|R> <model#> <trace-path>', file=sys.stderr)
         return 1
 
-    model_id = int(argv[1])
-    trace_path = argv[2]
+    kind = argv[1]
+    src, tgt = {'A': (False, True), 'D': (True, False), 'R': (True, True)}[kind]
+    model_id = int(argv[2])
+    trace_path = argv[3]
+
+    taskname = 'F{}{:03d}'.format(kind, model_id)
 
     subprocess.check_call(['bazel', 'build', '//cxx_simulator:sim'], stderr=subprocess.DEVNULL)
 
-    model_path = os.path.join(ROOT_DIR, 'data', 'models', 'LA%03d_tgt.mdl.gz' % model_id)
-    best_trace_path = os.path.join(ROOT_DIR, 'data', 'traces', 'LA%03d.nbt.gz' % model_id)
-    best_meta_path = os.path.join(ROOT_DIR, 'data', 'traces', 'LA%03d.json' % model_id)
-    default_meta_path = os.path.join(ROOT_DIR, 'data', 'defaults', 'LA%03d.json' % model_id)
+    src_model_path = os.path.join(ROOT_DIR, 'data', 'models', taskname + '_src.mdl.gz') if src else None
+    tgt_model_path = os.path.join(ROOT_DIR, 'data', 'models', taskname + '_tgt.mdl.gz') if tgt else None
+    best_trace_path = os.path.join(ROOT_DIR, 'data', 'traces', taskname + '.nbt.gz')
+    best_meta_path = os.path.join(ROOT_DIR, 'data', 'traces', taskname + '.json')
+    default_meta_path = os.path.join(ROOT_DIR, 'data', 'defaults', taskname + '.json')
 
     with open(default_meta_path, 'r') as f:
         default_meta = json.load(f)
 
     default_energy = default_meta['energy']
 
-    new_time, new_energy = _run_simulator(model_path, trace_path)
+    new_time, new_energy = _run_simulator(src_model_path, tgt_model_path, trace_path)
     new_meta = {
         'time': new_time,
         'energy': new_energy,
@@ -52,9 +78,9 @@ def main(argv):
     else:
         best_energy = default_energy
 
-    print('-- Default:%12d' % default_energy)
-    print('-- Best:   %12d' % best_energy)
-    print('-- New:    %12d' % new_energy)
+    print('-- Default:%18d' % default_energy)
+    print('-- Best:   %18d' % best_energy)
+    print('-- New:    %18d' % new_energy)
 
     if best_energy is not None and new_energy >= best_energy:
         print('Could not update the best record.')
