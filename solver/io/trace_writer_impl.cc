@@ -2,7 +2,7 @@
 
 #include "glog/logging.h"
 
-// To enable logging, specify: --vmodule=trace_writer=1
+// To enable logging, specify: --vmodule=trace_writer_impl=1
 
 void TraceWriterImpl::Halt() {
   WriteByte(0b11111111);
