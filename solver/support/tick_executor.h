@@ -1,8 +1,11 @@
 #ifndef SOLVER_SUPPORT_TICK_EXECUTOR_H
 #define SOLVER_SUPPORT_TICK_EXECUTOR_H
 
+#include <set>
+#include <utility>
 #include <vector>
 
+#include "solver/data/action.h"
 #include "solver/data/command.h"
 #include "solver/data/state.h"
 #include "solver/io/trace_writer.h"
@@ -15,13 +18,22 @@ class TickExecutor {
 
     const FieldState* field() const { return field_; }
     const std::map<int, Command>& commands() const { return commands_; }
+    const std::vector<Action> GetAction();
 
    protected:
     explicit Commander(const FieldState* field);
 
    private:
+    bool Interfere(const Region& region);
+    const std::vector<Region> VolatileCoordinates(int bot_id, const Command& command);
+    const Point Operand(int bot_id, const Command& command);
+
     const FieldState* const field_;
     std::map<int, Command> commands_;
+    std::map<Region, std::set<Region> > gfills_;
+    std::map<Region, std::set<Region> > gvoids_;
+    std::map<std::pair<Region, Region>, int> masters_;
+    std::map<std::pair<Region, Region>, int> slaves_;
 
     friend class TickExecutor;
   };
@@ -29,7 +41,7 @@ class TickExecutor {
   class Strategy {
    public:
     virtual void Decide(Commander* commander) = 0;
-    
+
    protected:
     virtual ~Strategy() = default;
   };
@@ -40,7 +52,7 @@ class TickExecutor {
   void Run(FieldState* field, TraceWriter* writer);
 
  private:
-  static void ApplyCommand(int bot_id, const Command& command, FieldState* field);
+  static void ApplyAction(FieldState* field, const Action& action);
 
   Strategy* const strategy_;
 };

@@ -79,7 +79,7 @@ struct Point {
 
   explicit Point(int x = 0, int y = 0, int z = 0) : x(x), y(y), z(z) {}
 
-  inline bool IsOrigin() {
+  inline bool IsOrigin() const {
     return x == 0 && y == 0 && z == 0;
   }
 
@@ -129,6 +129,7 @@ struct Region {
   Point mini, maxi;
 
   Region() = default;
+  static Region FromPoint(const Point& p);
   static Region FromPointDelta(const Point& p, const Delta& d);
 
   inline int Dimension() const {

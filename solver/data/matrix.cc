@@ -14,6 +14,29 @@ bool Matrix::IsEmpty() const {
   return true;
 }
 
+bool Matrix::IsMovable(const Region& r) const {
+  CHECK(0 <= r.mini.x && r.maxi.x < resolution_ &&
+        0 <= r.mini.y && r.maxi.y < resolution_ &&
+        0 <= r.mini.z && r.maxi.z < resolution_);
+  for (int x = r.mini.x; x <= r.maxi.x; ++x) {
+    for (int y = r.mini.y; y <= r.maxi.y; ++y) {
+      for (int z = r.mini.z; z <= r.maxi.z; ++z) {
+        if (data_[x * resolution_ * resolution_ + y * resolution_ + z]) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+bool Matrix::IsPlaceable(const Region& r) const {
+  CHECK(1 <= r.mini.x && r.maxi.x < resolution_ - 1 &&
+        0 <= r.mini.y && r.maxi.y < resolution_ - 1 &&
+        1 <= r.mini.z && r.maxi.z < resolution_ - 1);
+  return true;
+}
+
 bool Matrix::Get(int x, int y, int z) const {
   CHECK(0 <= x && x < resolution_ &&
         0 <= y && y < resolution_ &&

@@ -16,6 +16,7 @@ cc_library(
     srcs = ["tick_executor.cc"],
     hdrs = ["tick_executor.h"],
     deps = [
+        "//solver/data:action",
         "//solver/data:command",
         "//solver/data:geometry",
         "//solver/data:state",

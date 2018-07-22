@@ -6,6 +6,8 @@
 
 #include "glog/logging.h"
 
+#include "solver/data/geometry.h"
+
 class Matrix {
  public:
   Matrix() : resolution_(0) {}
@@ -32,6 +34,8 @@ class Matrix {
 
   bool IsZeroSized() const { return resolution_ == 0; }
   bool IsEmpty() const;
+  bool IsMovable(const Region& r) const;
+  bool IsPlaceable(const Region& r) const;
   bool Get(int x, int y, int z) const;
   int Resolution() const { return resolution_; }
 

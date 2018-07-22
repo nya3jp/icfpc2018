@@ -46,7 +46,8 @@ class FieldState {
   FieldState(Matrix target, Matrix matrix, std::map<int, BotState> bots)
       : target_(std::move(target)),
         matrix_(std::move(matrix)),
-        bots_(std::move(bots)) {}
+        bots_(std::move(bots)),
+        harmonics_(Harmonics::LOW) {}
 
   FieldState(const FieldState& other) = delete;
   FieldState(FieldState&& other) {
@@ -73,10 +74,15 @@ class FieldState {
 
   bool IsHalted() const { return bots_.empty(); }
 
+  bool IsHarmonicsLow() const { return harmonics_ == Harmonics::LOW; }
+  void FlipHarmonics() { harmonics_ = harmonics_ == Harmonics::LOW ? Harmonics::HIGH : Harmonics::LOW; }
+
  private:
+  enum class Harmonics { LOW, HIGH };
   const Matrix target_;
   Matrix matrix_;
   std::map<int, BotState> bots_;
+  Harmonics harmonics_;
 };
 
 #endif // SOLVER_DATA_STATE_H

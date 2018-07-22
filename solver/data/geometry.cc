@@ -17,6 +17,15 @@ std::ostream& operator<<(std::ostream& os, const Point& p) {
 }
 
 // static
+Region Region::FromPoint(const Point& p) {
+  Region r;
+  r.mini.x = r.maxi.x = p.x;
+  r.mini.y = r.maxi.y = p.y;
+  r.mini.z = r.maxi.z = p.z;
+  return r;
+}
+
+// static
 Region Region::FromPointDelta(const Point& p, const Delta& d) {
   Region r;
   r.mini.x = std::min(p.x, p.x + d.dx);

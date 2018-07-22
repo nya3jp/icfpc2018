@@ -5,6 +5,7 @@ cc_library(
     srcs = ["matrix.cc"],
     hdrs = ["matrix.h"],
     deps = [
+        ":geometry",
         "@com_github_google_glog//:glog",
     ],
 )
@@ -25,6 +26,15 @@ cc_library(
     deps = [
         ":geometry",
         ":matrix",
+        "@com_github_google_glog//:glog",
+    ],
+)
+
+cc_library(
+    name = "action",
+    hdrs = ["action.h"],
+    deps = [
+        ":geometry",
         "@com_github_google_glog//:glog",
     ],
 )
