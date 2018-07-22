@@ -251,11 +251,23 @@ void TickExecutor::ApplyAction(FieldState* field, const Action& action) {
       break;
 
     case Action::FILL:
-      field->matrix().Set(action.point.x, action.point.y, action.point.z, true);
+      for (int x = action.region.mini.x; x < action.region.maxi.x; ++x) {
+        for (int y = action.region.mini.y; y < action.region.maxi.y; ++y) {
+          for (int z = action.region.mini.z; z < action.region.maxi.z; ++z) {
+            field->matrix().Set(x, y, z, true);
+          }
+        }
+      }
       break;
 
     case Action::VOID:
-      field->matrix().Set(action.point.x, action.point.y, action.point.z, false);
+      for (int x = action.region.mini.x; x < action.region.maxi.x; ++x) {
+        for (int y = action.region.mini.y; y < action.region.maxi.y; ++y) {
+          for (int z = action.region.mini.z; z < action.region.maxi.z; ++z) {
+            field->matrix().Set(x, y, z, false);
+          }
+        }
+      }
       break;
 
     case Action::FISSION:
