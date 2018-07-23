@@ -154,8 +154,19 @@ function init() {
         }
     }
 
+    var sliderTick = document.getElementById("sliderTick");
+    var sliderInterval = document.getElementById("sliderInterval");
+    sliderTick.setAttribute("max", diffsForward.length - 1);
+    sliderTick.addEventListener("input", changeTickFromSlider);
+    sliderInterval.addEventListener("input", changeIntervalFromSlider);
+
+    var timer = undefined;
+    var interval = -1;
+
     function changeTick(nextTick) {
         console.log("changeTick", tick, "to", nextTick);
+        changeInterval(-1);
+        sliderTick.disabled = true;
         ss = scalarStates[nextTick]
         s = "tick: " + ss[0] + ", energy: " + ss[1] + ", harmonics: " + ss[2] + ", #bots: " + ss[3]
         document.getElementById("scalarState").innerHTML = s;
@@ -170,34 +181,31 @@ function init() {
         }
         disposeBoxesBots();
         drawBots(botStates[nextTick]);
+        sliderTick.disabled = false;
+        changeInterval(interval);
         tick = nextTick;
     }
 
-    var sliderTick = document.getElementById("sliderTick");
-    var sliderInterval = document.getElementById("sliderInterval");
-    sliderTick.setAttribute("max", diffsForward.length - 1);
-    sliderTick.addEventListener("input", changeTickFromSlider);
-    sliderInterval.addEventListener("input", changeIntervalFromSlider);
-
-    var timer = undefined;
     function changeIntervalFromSlider(e) {
         var speed = Number(e.target.value);
         if (speed == 0) {
-            interval = -1
+            interval = -1;
         } else {
             interval = 1000 / speed;
         }
         changeInterval(interval);
     }
-    function changeInterval(interval) {
+
+    function changeInterval(i) {
         if (timer != undefined) {
             clearInterval(timer);
         }
-        if (interval != -1) {
+        if (i != -1) {
             timer = window.setInterval(function(){
-                sliderTick.value++;
-                changeTick(sliderTick.value);
-            }, interval);
+                v = Number(sliderTick.value);
+                sliderTick.value = v + 1;
+                changeTick(v + 1);
+            }, i);
         }
     }
 
