@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="https://icfpcontest2018.github.io/assets/css/style.css?v=d566f045d2ede04c514067d680871c1799527260" media="screen" type="text/css">
+    <title>Debugger</title>
+  </head>
+
+  <body>
+    <div id="content-wrapper">
+      <div class="wide-inner clearfix">
+        <section id="main-content" style="width: 100%;">
+          <h1 id="execute-trace-full">Execute Trace (Full)</h1>
+
+<form>
+
+<input type="hidden" id="full" value="true" />
+
+<div style="display: none">
+
+<p>
+<label for="srcModelFileIn">Source Model:</label>
+<input type="checkbox" id="srcModelEmpty" checked="checked"  />
+<label for="srcModelEmpty">empty</label><br />
+<input type="file" accept=".mdl" id="srcModelFileIn" />
+</p>
+
+<p>
+<label for="tgtModelFileIn">Target Model:</label>
+<input type="checkbox" id="tgtModelEmpty" />
+<label for="tgtModelEmpty">empty</label><br />
+<input accept=".mdl" type="file" id="tgtModelFileIn" />
+</p>
+
+<p>
+<label for="traceFileIn">Trace:</label>
+<input accept=".nbt" type="file" id="traceFileIn" />
+</p>
+
+</div>
+
+<p>
+<label for="stepsPerFrame">Steps per Frame:</label><br />
+<select id="stepsPerFrame">
+<option value="-60">1/60</option>
+<option value="-30">1/30</option>
+<option selected="" value="1">1</option>
+<option value="10">10</option>
+<option value="50">50</option>
+<option value="100">100</option>
+<option value="500">500</option>
+<option value="1000">1000</option>
+</select>
+</p>
+
+
+<p>
+<input type="button" id="execTrace" value="Execute Trace" />
+</p>
+
+</form>
+
+<hr />
+
+<div id="glcanvas_container" style="position: relative;">
+  <canvas id="glcanvas" tabindex="0" />
+</div>
+
+<hr />
+
+    <pre id="stdout"></pre>
+
+<script>
+var vis = null;
+</script>
+
+<script src="https://icfpcontest2018.github.io/assets/js/three.min.js"></script>
+
+<script src="https://icfpcontest2018.github.io/assets/js/Detector.js"></script>
+
+<script src="https://icfpcontest2018.github.io/assets/js/stats.min.js"></script>
+
+<script src="https://icfpcontest2018.github.io/assets/js/visualizer.js"></script>
+
+<script>
+(function () {
+  if (! Detector.webgl) {
+    const glcanvasContainer = document.getElementById('glcanvas_container');
+    const glcanvas = document.getElementById('glcanvas');
+    glcanvasContainer.removeChild(glcanvas);
+    var warning = Detector.getWebGLErrorMessage();
+    glcanvasContainer.appendChild(warning);
+  } else {
+    vis = initVisualizer({stats: true, screenshot: true, controls: true});
+  }
+})();
+</script>
+
+<script src="https://icfpcontest2018.github.io/assets/js/load-file-utils.js"></script>
+
+<script>
+  var srcModelBData = null;
+  var tgtModelBData = null;
+  var traceBData = null;
+
+  async function loadFile(url) {
+    return new Uint8Array(await (await fetch(url)).arrayBuffer());
+  }
+
+  (async function() {
+
+  const params = new URLSearchParams(location.search.slice(1));
+  const source = params.get('source');
+  const target = params.get('target');
+  const trace = params.get('trace');
+
+  const form = document.forms[0];
+
+  if (source) {
+    srcModelBData = await loadFile(source);
+  } else {
+    form.srcModelEmpty.setAttribute('checked', 'checked');
+  }
+  if (target) {
+    tgtModelBData = await loadFile(target);
+  } else {
+    form.tgtModelEmpty.setAttribute('checked', 'checked');
+  }
+  traceBData = await loadFile(trace);
+
+  })();
+</script>
+
+<script src="https://icfpcontest2018.github.io/assets/js/exec-trace.js"></script>
+
+  </body>
+</html>

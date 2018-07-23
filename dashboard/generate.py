@@ -12,7 +12,7 @@ DATASETS = (
 
 
 def main():
-    root_dir = os.path.dirname(__file__)
+    root_dir = os.path.join(os.path.dirname(__file__), '..')
     data_dir = os.path.join(root_dir, 'data')
     defaults_dir = os.path.join(data_dir, 'defaults')
     traces_dir = os.path.join(data_dir, 'traces')
@@ -29,12 +29,17 @@ def main():
     for prefix, count in DATASETS:
         for index in range(1, count + 1):
             name = '%s%03d' % (prefix, index)
+            link = 'debug.html?trace=data/traces/%s.nbt' % name
+            if prefix in ('FA', 'FR'):
+                link += '&target=data/models/%s_tgt.mdl' % name
+            if prefix in ('FD', 'FR'):
+                link += '&source=data/models/%s_tgt.mdl' % name
             with open(os.path.join(defaults_dir, '%s.json' % name)) as f:
                 default_energy = json.load(f)['energy']
             with open(os.path.join(traces_dir, '%s.json' % name)) as f:
                 our_energy = json.load(f)['energy']
             percent = '%.2f%%' % (100 - 100 * our_energy / default_energy)
-            print('<div class="entry"><div class="label">%s: %s / %s (%s)</div><div class="bar" style="width: %s"></div></div>' % (name, our_energy, default_energy, percent, percent))
+            print('<div class="entry"><div class="label"><a href="%s">%s</a>: %s / %s (%s)</div><div class="bar" style="width: %s"></div></div>' % (link, name, our_energy, default_energy, percent, percent))
 
 
 if __name__ == '__main__':
