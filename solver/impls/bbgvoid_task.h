@@ -9,7 +9,7 @@
 
 class BBGvoidTaskSolver : public Solver {
  public:
-  BBGvoidTaskSolver(const Matrix* source, const Matrix* target, TraceWriter* writer);
+  BBGvoidTaskSolver(const Matrix* source, const Matrix* target, TraceWriter* writer, bool halt = true);
   BBGvoidTaskSolver(const BBGvoidTaskSolver& other) = delete;
 
   void Solve() override;
@@ -19,6 +19,7 @@ class BBGvoidTaskSolver : public Solver {
 
   FieldState field_;
   TraceWriter* writer_;
+  bool halt_;
 };
 
 #endif //SOLVER_IMPLS_BBGVOID_TASK_H

@@ -250,36 +250,35 @@ TaskPtr MakeHaltTask() {
   });
 }
 
-TaskPtr MakeMasterTask(Region& bb_) {
-  if (bb_.mini.x != 1 || bb_.mini.z != 1){
-    return MakeSequenceTask(
-        MakeInitMoveTask(bb_),
-        MakeFissionTask(bb_),
-        MakeGvoidTask(bb_),
-        MakeFusionTask(bb_),
-        MakeLastMoveTask(),
-        MakeHaltTask());
-  } else {
-    return MakeSequenceTask(
-        MakeFissionTask(bb_),
-        MakeGvoidTask(bb_),
-        MakeFusionTask(bb_),
-        MakeHaltTask());
+TaskPtr MakeMasterTask(Region& bb_, bool halt) {
+  std::vector<TaskPtr> tasks;
+  if (bb_.mini.x != 1 || bb_.mini.z != 1) {
+    tasks.emplace_back(MakeInitMoveTask(bb_));
   }
+  tasks.emplace_back(MakeFissionTask(bb_));
+  tasks.emplace_back(MakeGvoidTask(bb_));
+  tasks.emplace_back(MakeFusionTask(bb_));
+  if (bb_.mini.x != 1 || bb_.mini.z != 1) {
+    tasks.emplace_back(MakeLastMoveTask());
+  }
+  if (halt) {
+    tasks.emplace_back(MakeHaltTask());
+  }
+  return MakeSequenceTask(std::move(tasks));
 }
 
 }  // namespace
 
 BBGvoidTaskSolver::BBGvoidTaskSolver(
-    const Matrix* source, const Matrix* target, TraceWriter* writer)
+    const Matrix* source, const Matrix* target, TraceWriter* writer, bool halt)
     : field_(FieldState::FromModels(source->Copy(), target->Copy())),
-      writer_(writer) {
+      writer_(writer), halt_(halt) {
     CHECK(target->IsEmpty()) << "target should be empty for BBGvoid solver";
 }
 
 void BBGvoidTaskSolver::Solve() {
   Region bb = CalculateBB();
-  TaskExecutor executor(MakeMasterTask(bb));
+  TaskExecutor executor(MakeMasterTask(bb, halt_));
   executor.Run(&field_, writer_);
   CHECK(field_.IsHalted());
 }
