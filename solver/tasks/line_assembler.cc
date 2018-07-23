@@ -52,15 +52,20 @@ Region GetBoundingBox(const Matrix& matrix) {
 }
 
 std::vector<Region> ComputeRegions(Task::Commander* cmd) {
-  constexpr int MIN_WIDTH = 2;
   int x_divs = FLAGS_line_assembler_x_divs;
   int z_divs = FLAGS_line_assembler_z_divs;
 
   const int resolution = TARGET.Resolution();
   Region bound = GetBoundingBox(TARGET);
 
+  int x_min_width = 1;
+  int z_min_width = 2;
+  if (FLAGS_line_assembler_flip_xz) {
+    x_min_width = 2;
+    z_min_width = 1;
+  }
   // Extend bounding to afford regions.
-  while (bound.maxi.x - bound.mini.x < MIN_WIDTH * x_divs) {
+  while (bound.maxi.x - bound.mini.x + 1 < x_min_width * x_divs) {
     if (bound.mini.x > 0) {
       --bound.mini.x;
     } else if (bound.maxi.x < resolution - 1) {
@@ -69,7 +74,7 @@ std::vector<Region> ComputeRegions(Task::Commander* cmd) {
       LOG(FATAL) << "Resolution is too small";
     }
   }
-  while (bound.maxi.z - bound.mini.z < MIN_WIDTH * z_divs) {
+  while (bound.maxi.z - bound.mini.z + 1 < z_min_width * z_divs) {
     if (bound.mini.z > 0) {
       --bound.mini.z;
     } else if (bound.maxi.z < resolution - 1) {
@@ -315,7 +320,13 @@ TaskPtr MakeScatterToRegionsTask(std::vector<Region> regions) {
     for (int index_region = 0; index_region < static_cast<int>(regions.size()); ++index_region) {
       const Region& region = regions[index_region];
       subtasks.emplace_back(MakeGreedyMoveTask(index_region * 2 + 0, region.mini));
-      subtasks.emplace_back(MakeGreedyMoveTask(index_region * 2 + 1, region.mini + Delta(0, 0, 1)));
+      int x_delta = 0;
+      int z_delta = 1;
+      if (FLAGS_line_assembler_flip_xz) {
+        x_delta = 1;
+        z_delta = 0;
+      }
+      subtasks.emplace_back(MakeGreedyMoveTask(index_region * 2 + 1, region.mini + Delta(x_delta, 0, z_delta)));
     }
     return MakeBarrierTask(std::move(subtasks));
   });
