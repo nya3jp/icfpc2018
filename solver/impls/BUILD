@@ -143,6 +143,7 @@ cc_library(
         ":base",
         ":bbgvoid_task",
         ":delete_strategy",
+        ":delete_strategy3",
         ":fission_naive",
         ":generic_task",
         ":naive",

@@ -6,6 +6,7 @@
 #include "solver/impls/base.h"
 #include "solver/impls/bbgvoid_task.h"
 #include "solver/impls/deleter.h"
+#include "solver/impls/deleter3.h"
 #include "solver/impls/fission_naive.h"
 #include "solver/impls/generic_task.h"
 #include "solver/impls/naive.h"
@@ -27,6 +28,8 @@ void ReassembleNaiveSolver::Solve() {
     disassembler = std::unique_ptr<Solver>(new BBGvoidTaskSolver(source_, &empty, writer_, false));
   } else if (disassembler_name_ == "delete") {
     disassembler = std::unique_ptr<Solver>(new DeleteStrategySolver(source_, &empty, writer_, false));
+  } else if (disassembler_name_ == "delete3") {
+    disassembler = std::unique_ptr<Solver>(new DeleteStrategySolver3(source_, &empty, writer_, false));
   } else {
     LOG(FATAL) << "No disassembler impl found.";
   }
