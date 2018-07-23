@@ -45,6 +45,17 @@ def main(argv):
         print('Usage: evaluate.py <A|D|R> <model#> <trace-path>', file=sys.stderr)
         return 1
 
+    use_reference = False
+    skip_build = False
+    for opt in argv[4:]:
+        if opt == '--reference':
+            use_reference = True
+        elif opt == '--nobuild':
+            skip_build = True
+        else:
+            print('Unknown option %s' % opt)
+            return 1
+
     kind = argv[1]
     src, tgt = {'A': (False, True), 'D': (True, False), 'R': (True, True)}[kind]
     model_id = int(argv[2])
@@ -52,7 +63,8 @@ def main(argv):
 
     taskname = 'F{}{:03d}'.format(kind, model_id)
 
-    subprocess.check_call(['bazel', 'build', '//cxx_simulator:sim'], stderr=subprocess.DEVNULL)
+    if not skip_build:
+        subprocess.check_call(['bazel', 'build', '//cxx_simulator:sim'], stderr=subprocess.DEVNULL)
 
     src_model_path = os.path.join(ROOT_DIR, 'data', 'models', taskname + '_src.mdl.gz') if src else None
     tgt_model_path = os.path.join(ROOT_DIR, 'data', 'models', taskname + '_tgt.mdl.gz') if tgt else None
@@ -65,7 +77,7 @@ def main(argv):
 
     default_energy = default_meta['energy']
 
-    if len(argv) > 4:
+    if use_reference:
         new_time, new_energy = _run_reference_simulator(src_model_path, tgt_model_path, trace_path)
     else:
         new_time, new_energy = _run_simulator(src_model_path, tgt_model_path, trace_path)
