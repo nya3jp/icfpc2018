@@ -24,3 +24,16 @@ cc_library(
         "@com_github_google_glog//:glog",
     ],
 )
+
+cc_library(
+    name = "manual_assembler",
+    srcs = ["manual_assembler.cc"],
+    hdrs = ["manual_assembler.h"],
+    deps = [
+        ":command",
+        "//solver/data:command",
+        "//solver/support:task",
+        "//solver/support:union_find",
+        "@com_github_google_glog//:glog",
+    ],
+)
