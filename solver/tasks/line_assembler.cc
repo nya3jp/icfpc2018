@@ -1,5 +1,6 @@
-#include "solver/tasks/plane_assembler.h"
+#include "solver/tasks/line_assembler.h"
 
+#include <algorithm>
 #include <functional>
 
 #include "glog/logging.h"
@@ -13,6 +14,71 @@
 #define BOT(bot_id) (BOTS.find(bot_id)->second)
 
 namespace {
+
+Region GetBoundingBox(const Matrix& matrix) {
+  int resolution = matrix.Resolution();
+  Point mini(resolution, resolution, resolution);
+  Point maxi(-1, -1, -1);
+  for (int x = 0; x < resolution; ++x) {
+    for (int y = 0; y < resolution; ++y) {
+      for (int z = 0; z < resolution; ++z) {
+        if (matrix.Get(x, y, z)) {
+          mini.x = std::min(mini.x, x);
+          mini.y = std::min(mini.y, y);
+          mini.z = std::min(mini.z, z);
+          maxi.x = std::max(maxi.x, x);
+          maxi.y = std::max(maxi.y, y);
+          maxi.z = std::max(maxi.z, z);
+        }
+      }
+    }
+  }
+  return Region(mini, maxi);
+}
+
+std::vector<Region> ComputeRegions(Task::Commander* cmd) {
+  constexpr int X_DIVS = 5;
+  constexpr int Z_DIVS = 4;
+  constexpr int MIN_WIDTH = 2;
+
+  const int resolution = TARGET.Resolution();
+  Region bound = GetBoundingBox(TARGET);
+
+  // Extend bounding to afford regions.
+  while (bound.maxi.x - bound.mini.x < MIN_WIDTH * X_DIVS) {
+    if (bound.mini.x > 0) {
+      --bound.mini.x;
+    } else if (bound.maxi.x < resolution - 1) {
+      ++bound.maxi.x;
+    } else {
+      LOG(FATAL) << "Resolution is too small";
+    }
+  }
+  while (bound.maxi.z - bound.mini.z < MIN_WIDTH * Z_DIVS) {
+    if (bound.mini.z > 0) {
+      --bound.mini.z;
+    } else if (bound.maxi.z < resolution - 1) {
+      ++bound.maxi.z;
+    } else {
+      LOG(FATAL) << "Resolution is too small";
+    }
+  }
+
+  std::vector<Region> regions;
+  for (int ix = 0; ix < X_DIVS; ++ix) {
+    for (int iz = 0; iz < Z_DIVS; ++iz) {
+      regions.emplace_back(
+          Point(bound.mini.x + (bound.maxi.x - bound.mini.x) * ix / X_DIVS,
+                0,
+                bound.mini.z + (bound.maxi.z - bound.mini.z) * iz / Z_DIVS),
+          Point(bound.mini.x + (bound.maxi.x - bound.mini.x) * (ix + 1) / X_DIVS - 1,
+                resolution - 1,
+                bound.mini.z + (bound.maxi.z - bound.mini.z) * (iz + 1) / Z_DIVS - 1));
+    }
+  }
+
+  return regions;
+}
 
 TaskPtr MakeGreedyMoveTask(int bot_id, Point destination) {
   return MakeTask([=](Task::Commander* cmd) -> bool {
@@ -94,7 +160,7 @@ TaskPtr MakeFusionTask() {
 
 }  // namespace
 
-TaskPtr MakePlaneAssemblerTask() {
+TaskPtr MakeLineAssemblerTask() {
   return MakeTask([](Task::Commander* cmd) -> TaskPtr {
     CHECK(MATRIX.IsEmpty()) << "precondition failed";
     CHECK_EQ(1, BOTS.size()) << "precondition failed";

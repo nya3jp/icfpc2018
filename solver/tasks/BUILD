@@ -12,9 +12,9 @@ cc_library(
 )
 
 cc_library(
-    name = "plane_assembler",
-    srcs = ["plane_assembler.cc"],
-    hdrs = ["plane_assembler.h"],
+    name = "line_assembler",
+    srcs = ["line_assembler.cc"],
+    hdrs = ["line_assembler.h"],
     deps = [
         ":command",
         "//solver/data:command",

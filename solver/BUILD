@@ -15,7 +15,7 @@ cc_binary(
         "//solver/impls:task_executor_example",
         "//solver/impls:tick_executor_example",
         "//solver/support:careless_controller",
-        "//solver/tasks:plane_assembler",
+        "//solver/tasks:line_assembler",
         "@com_github_gflags_gflags//:gflags",
         "@com_github_google_glog//:glog",
     ],
