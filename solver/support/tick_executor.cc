@@ -339,6 +339,7 @@ void TickExecutor::ApplyAction(FieldState* field, const Action& action) {
         uint64_t seeds = bots.at(action.bot_id).seeds();
         seeds |= static_cast<uint64_t>(1) << slave_id;
         seeds |= bots.at(slave_id).seeds();
+        bots.at(action.bot_id).set_seeds(seeds);
         bots.erase(slave_id);
         field->IncrementEnergy(-24);
         break;
