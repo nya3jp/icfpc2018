@@ -1,40 +1,33 @@
 #include "solver/manuals/example.h"
 
-#include <iostream>
-
+#include "solver/manuals/debug.h"
 #include "solver/tasks/manual_assembler.h"
 
 namespace {
-
-TaskPtr MakePrintTask() {
-  return MakeTask([](Task::Commander* cmd) -> bool {
-    const Matrix& target = cmd->field()->target();
-    int resolution = target.Resolution();
-    for (int y = 0; y < resolution; ++y) {
-      std::cerr << "y = " << y << std::endl;
-      std::cerr << " ";
-      for (int x = 0; x < resolution; ++x) {
-        std::cerr << x % 10;
-      }
-      std::cerr << std::endl;
-      for (int z = resolution - 1; z >= 0; --z) {
-        std::cerr << z % 10;
-        for (int x = 0; x < resolution; ++x) {
-          std::cerr << (target.Get(x, y, z) ? '#' : '.');
-        }
-        std::cerr << std::endl;
-      }
-      std::cerr << std::endl;
-    }
-    return true;
-  });
-}
 
 }  // namespace
 
 TaskPtr MakeManualExampleTask() {
   return MakeSequenceTask(
-      //MakePrintTask(),
-      Fill(Region(Point(6, 0, 6), Point(6, 6, 6))),
-      Fill(Region(Point(3, 7, 3), Point(9, 8, 9))));
+      // FA002
+      Fill(Region(Point(8, 0, 7), Point(10, 0, 7))),
+      Fill(Region(Point(7, 0, 8), Point(11, 0, 11))),
+
+      Fill(Region(Point(9, 1, 9), Point(9, 8, 10))),
+
+      Fill(Region(Point(7, 9, 7), Point(11, 17, 11))),
+
+      Void(Region(Point(10, 9, 11), Point(11, 17, 11))),
+      Void(Region(Point(7, 9, 10), Point(7, 17, 11))),
+
+      Void(Region(Point(10, 9, 7), Point(11, 17, 7))),
+      Void(Region(Point(11, 9, 8), Point(11, 17, 8))),
+
+      Void(Region(Point(7, 9, 7), Point(9, 9, 7))),
+      Void(Region(Point(7, 10, 7), Point(7, 10, 7))),
+
+      Void(Region(Point(7, 13, 7), Point(7, 13, 7))),
+      Void(Region(Point(7, 15, 7), Point(7, 16, 7))),
+
+      MakePrintTask());
 }

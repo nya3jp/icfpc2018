@@ -186,6 +186,12 @@ struct Region {
     return (mini.x < maxi.x ? 1 : 0) + (mini.y < maxi.y ? 1 : 0) + (mini.z < maxi.z ? 1 : 0);
   }
 
+  inline bool Contains(const Point& p) const {
+    return (mini.x <= p.x && p.x <= maxi.x &&
+            mini.y <= p.y && p.y <= maxi.y &&
+            mini.z <= p.z && p.z <= maxi.z);
+  }
+
   inline bool operator==(const Region& o) const {
     return mini == o.mini && maxi == o.maxi;
   }

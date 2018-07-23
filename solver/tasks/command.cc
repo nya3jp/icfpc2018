@@ -5,7 +5,7 @@
 TaskPtr MakeCommandTask(int bot_id, Command command) {
   return MakeTask([=](Task::Commander* cmd) -> bool {
     bool success = cmd->Set(bot_id, command);
-    CHECK(success);
+    CHECK(success) << command.type;
     return true;
   });
 }
