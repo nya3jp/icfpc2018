@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <set>
 
 #include "glog/logging.h"
 
@@ -76,12 +77,12 @@ std::vector<Region> ComputeRegions(Task::Commander* cmd) {
   for (int ix = 0; ix < X_DIVS; ++ix) {
     for (int iz = 0; iz < Z_DIVS; ++iz) {
       regions.emplace_back(
-          Point(bound.mini.x + (bound.maxi.x - bound.mini.x) * ix / X_DIVS,
+          Point(bound.mini.x + (bound.maxi.x - bound.mini.x + 1) * ix / X_DIVS,
                 0,
-                bound.mini.z + (bound.maxi.z - bound.mini.z) * iz / Z_DIVS),
-          Point(bound.mini.x + (bound.maxi.x - bound.mini.x) * (ix + 1) / X_DIVS - 1,
+                bound.mini.z + (bound.maxi.z - bound.mini.z + 1) * iz / Z_DIVS),
+          Point(bound.mini.x + (bound.maxi.x - bound.mini.x + 1) * (ix + 1) / X_DIVS - 1,
                 resolution - 1,
-                bound.mini.z + (bound.maxi.z - bound.mini.z) * (iz + 1) / Z_DIVS - 1));
+                bound.mini.z + (bound.maxi.z - bound.mini.z + 1) * (iz + 1) / Z_DIVS - 1));
     }
   }
 
@@ -208,8 +209,82 @@ TaskPtr MakeFissionTask() {
           MakeLinearFissionTask(2)));
 }
 
-TaskPtr MakeFusionTask() {
-  return {};
+TaskPtr MakeGoCeilingTask() {
+  return MakeTask([=](Task::Commander *cmd) -> TaskPtr {
+    // Assumes all bots have distinct x/z coordinates.
+    const int resolution = TARGET.Resolution();
+    std::vector<TaskPtr> subtasks;
+    const auto& bots = BOTS;
+    for (const auto& pair : bots) {
+      const auto& bot = pair.second;
+      if (bot.position().y != resolution - 1) {
+        Point ceiling = bot.position();
+        ceiling.y = resolution - 1;
+        subtasks.emplace_back(MakeGreedyMoveTask(bot.id(), ceiling));
+      }
+    }
+    return MakeBarrierTask(std::move(subtasks));
+  });
+}
+
+TaskPtr MakeRoughFusionTask() {
+  return MakeTask([](Task::Commander *cmd) -> bool {
+    const auto& bots = BOTS;
+    int num_remaining_bots = static_cast<int>(bots.size());
+
+    std::set<int> fusion_ids;
+    for (auto i = bots.begin(); i != bots.end(); ++i) {
+      if (fusion_ids.count(i->first) > 0) {
+        continue;
+      }
+      Point pi = i->second.position();
+      auto j = i;
+      for (++j; j != bots.end(); ++j) {
+        if (fusion_ids.count(j->first) > 0) {
+          continue;
+        }
+        Point pj = j->second.position();
+        Delta d = pj - pi;
+        if (d.IsNear()) {
+          bool i_success = cmd->Set(i->first, Command::FusionP(d));
+          bool j_success = cmd->Set(j->first, Command::FusionS(Delta() - d));
+          CHECK(i_success);
+          CHECK(j_success);
+          fusion_ids.insert(i->first);
+          fusion_ids.insert(j->first);
+          --num_remaining_bots;
+          break;
+        }
+      }
+    }
+
+    const Point meeting_point(0, TARGET.Resolution() - 1, 0);
+    for (auto i = bots.begin(); i != bots.end(); ++i) {
+      if (fusion_ids.count(i->first) > 0) {
+        continue;
+      }
+      MakeGreedyMoveTask(i->first, meeting_point)->Decide(cmd);
+    }
+
+    return num_remaining_bots == 1;
+  });
+}
+
+TaskPtr MakeGoOriginTask() {
+  return MakeTask([=](Task::Commander *cmd) -> TaskPtr {
+    CHECK_EQ(1, BOTS.size());
+    const int bot_id = BOTS.begin()->first;
+    return MakeGreedyMoveTask(bot_id, Point());
+  });
+}
+
+TaskPtr MakeFinishTask() {
+  return MakeTask([=](Task::Commander *cmd) -> TaskPtr {
+    return MakeSequenceTask(
+        MakeGoCeilingTask(),
+        MakeRoughFusionTask(),
+        MakeGoOriginTask());
+  });
 }
 
 TaskPtr MakeScatterToRegionsTask(std::vector<Region> regions) {
@@ -342,7 +417,7 @@ TaskPtr MakeLineAssemblerTask() {
         MakeCommandTask(0, Command::Flip()),
         MakeParallelLineAssembleTask(regions),
         MakeCommandTask(0, Command::Flip()),
-        MakeFusionTask()/*,
-        MakeCommandTask(0, Command::Halt())*/);
+        MakeFinishTask(),
+        MakeCommandTask(0, Command::Halt()));
   });
 }

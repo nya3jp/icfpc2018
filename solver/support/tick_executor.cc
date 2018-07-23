@@ -1,6 +1,11 @@
 #include "solver/support/tick_executor.h"
 
 bool TickExecutor::Commander::Set(int bot_id, const Command& command) {
+  CHECK(commands_.count(bot_id) > 0);
+  if (commands_[bot_id].type != Command::WAIT) {
+    return false;
+  }
+
   const std::vector<Region> vcs = VolatileCoordinates(bot_id, command);
   if (command.type == Command::GFILL || command.type == Command::GVOID) {
     CHECK(vcs.size() == 2);
@@ -60,7 +65,6 @@ bool TickExecutor::Commander::Set(int bot_id, const Command& command) {
     }
   }
 
-  CHECK(commands_.count(bot_id) > 0);
   commands_[bot_id] = command;
   return true;
 }
