@@ -1,7 +1,7 @@
-Team CalmDownDear(仮)
-=====================
+Team Line Graph
+===============
 
-[![CircleCI](https://circleci.com/gh/nya3jp/icfpc2018.svg?style=svg&circle-token=9e79cb8894982a0630fb7fbf3ed1cb04a15cb109)](https://circleci.com/gh/nya3jp/icfpc2018)
+This repository contains source codes for ICFP Programming Contest 2018.
 
 
 Members
@@ -13,55 +13,48 @@ Members
 - [@ytsmiling](https://github.com/ytsmiling)
 
 
-How to Build and Run
---------------------
+Programming languages
+---------------------
 
-Bazel is required to build C++ binaries. See this page for instructions:
+- **C++** for main solutions
+- **JavaScript** for visualizer
+- **Python** for everything else
+
+
+How to build and run our solution
+---------------------------------
+
+### Prerequisites
+
+Bazel is required to build our solution. See this page for instructions:
 
 https://docs.bazel.build/versions/master/install.html
 
-After prerequisites are installed, our solution can be built and run by:
+### Build
 
 ```
-TODO(all): Update this
+bazel build //solver
 ```
 
+### Run
 
-Notes for Team Members
-----------------------
-
-### Python virtualenv
-
-In CI environment, Python interpreter is launched with `venv_python.sh` which
-automatically creates a virtualenv at `.venv/` and installs dependencies in
-`requirements.txt`. If you want to use third-party libraries, please add them
-to `requirements.txt`.
-
-
-### Bazel Command Examples
-
-Example codes are in `examples` directory.
-
-#### Building
+Assembler (for FA* models)
 
 ```
-$ bazel build ...
-or
-$ bazel build //examples:minimal_main
+bazel-bin/solver/solver --impl line_assembler --target path/to/FA000_tgt.mdl --output out.nbt
 ```
 
-#### Running
-
+Deassembler (for FD* models)
 ```
-$ bazel-bin/examples/minimal_main
-or
-$ bazel run //examples:minimal_main
+bazel-bin/solver/solver --impl delete3 --source path/to/FD000_src.mdl --output out.nbt
 ```
 
-#### Testing
+Reassembler (for FR* models)
+```
+bazel-bin/solver/solver --impl reassemble_naive --disasm delete3 --asm line_assembler --source path/to/FR000_src.mdl --target path/to/FR000_tgt.mdl --output out.nbt
+```
 
-```
-$ bazel test ...
-or
-$ bazel test //examples:minimal_lib_test
-```
+Visualizer
+----------
+
+See `visualizer/README.md`.
