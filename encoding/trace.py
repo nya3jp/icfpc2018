@@ -45,6 +45,11 @@ class Trace:
             ret = [self.commands[self.idx]]
             self.idx += 1
             return ret
+        if self.commands[self.idx] & 0b111 in [0b001,
+                                               0b000]:
+            ret = [self.commands[self.idx + x] for x in range(4)]
+            self.idx += 4
+            return ret
         ret = [self.commands[self.idx], self.commands[self.idx + 1]]
         self.idx += 2
         return ret
@@ -85,6 +90,26 @@ class Trace:
     def fill(self, nd):
         nd = Trace._encode_nd(nd)
         self.commands.append((nd << 3) + 0b011)
+
+    def void(self, nd):
+        nd = Trace._encode_nd(nd)
+        self.commands.append((nd << 3) + 0b010)
+
+    def gfill(self, nd, fd):
+        nd = Trace._encode_nd(nd)
+        fd = Trace._encode_fd(fd)
+        self.commands.append((nd << 3) + 0b001)
+        self.commands.append(fd[0])
+        self.commands.append(fd[1])
+        self.commands.append(fd[2])
+
+    def gvoid(self, nd, fd):
+        nd = Trace._encode_nd(nd)
+        fd = Trace._encode_fd(fd)
+        self.commands.append((nd << 3) + 0b000)
+        self.commands.append(fd[0])
+        self.commands.append(fd[1])
+        self.commands.append(fd[2])
 
     def encode(self, path):
         data = np.asarray(self.commands, dtype=np.uint8).tobytes()
@@ -137,6 +162,19 @@ class Trace:
             elif command == 0b011:  # fill
                 nd = (data[i] & 0b11111000) >> 3
                 print('Fill', Trace._decode_nd(nd), file=file)
+            elif command == 0b010:  # void
+                nd = (data[i] & 0b11111000) >> 3
+                print('Void', Trace._decode_nd(nd), file=file)
+            elif command == 0b001:  # gfill
+                # TODO: skip
+                nd = (data[i] & 0b11111000) >> 3
+                fd = data[i + 1:i + 4]
+                print('GFill', Trace._decode_nd(nd), Trace._decode_fd(fd), file=file)
+            elif command == 0b000:  # gvoid
+                # TODO: skip
+                nd = (data[i] & 0b11111000) >> 3
+                fd = data[i + 1:i + 4]
+                print('GVoid', Trace._decode_nd(nd), Trace._decode_fd(fd), file=file)
             else:
                 raise ValueError('unrecognized command {0:08b}'.format(data[i]))
 
@@ -202,6 +240,14 @@ class Trace:
         for coord in decoded_nd:
             assert -1 <= coord <= 1, 'invalid nd: {0}'.format(nd)
         return decoded_nd
+
+    @staticmethod
+    def _encode_fd(fd):
+        return fd[0] + 30, fd[1] + 30, fd[2] + 30
+
+    @staticmethod
+    def _decode_fd(fd):
+        return fd[0] - 30, fd[1] - 30, fd[2] - 30
 
 
 if __name__ == '__main__':
