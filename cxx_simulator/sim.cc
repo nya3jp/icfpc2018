@@ -104,8 +104,8 @@ void CommandIssuer::FromFile(const std::string& path) {
 
 class Simulator {
  public:
-  Simulator(const Matrix* source, const Matrix* target, CommandIssuer* trace, const bool log)
-    : field_(FieldState::FromModels(source->Copy(), target->Copy())), trace_(trace), log_(log) {}
+  Simulator(const Matrix* source, const Matrix* target, CommandIssuer* trace, const std::string log_path)
+    : field_(FieldState::FromModels(source->Copy(), target->Copy())), trace_(trace), log_path_(log_path) {}
   void ReadCommands(std::ifstream ifs);
   void LogTick(int tick);
   void Exec();
@@ -119,7 +119,7 @@ class Simulator {
   FieldState field_;
   DummyWriter writer_;
   CommandIssuer* trace_;
-  bool log_;
+  std::string log_path_;
   std::ofstream log_file_;
 };
 
@@ -133,8 +133,9 @@ void Simulator::LogTick(int tick) {
 void Simulator::Exec() {
   TickExecutor executor(trace_);
   int tick = 0;
-  if (log_) {
-    log_file_ = std::ofstream("simlog.json");
+  bool log = !(log_path_.empty());
+  if (log) {
+    log_file_ = std::ofstream(log_path_);
     log_file_ << "{" << std::endl;
     log_file_ << "  \"target\":" << field_.target().ToJSON() << "," << std::endl;
     log_file_ << "  \"states\":[" << std::endl;
@@ -143,7 +144,7 @@ void Simulator::Exec() {
   while (!field_.IsHalted()) {
     executor.Run(&field_, &writer_);
     ++tick;
-    if (log_) {
+    if (log) {
       log_file_ << "," << std::endl;
       LogTick(tick);
     }
@@ -151,7 +152,7 @@ void Simulator::Exec() {
   CHECK(trace_->IsCommandsEmpty());
   CHECK(field_.matrix() == field_.target());
   std::cout << tick << " " << field_.energy() << std::endl;
-  if (log_) {
+  if (log) {
     log_file_ << std::endl;
     log_file_ << "  ]" << std::endl;
     log_file_ << "}" << std::endl;
@@ -162,7 +163,7 @@ void Simulator::Exec() {
 DEFINE_string(source, "", "Path to source model file");
 DEFINE_string(target, "", "Path to target model file");
 DEFINE_string(trace, "", "Path to input trace file");
-DEFINE_bool(log, false, "Output log file for visualizer");
+DEFINE_string(log, "", "Path to log file for visualizer");
 
 int main(int argc, char *argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -171,7 +172,7 @@ int main(int argc, char *argv[]) {
   google::InstallFailureSignalHandler();
 
   if ((FLAGS_source.empty() && FLAGS_target.empty()) || FLAGS_trace.empty()) {
-    LOG(ERROR) << "Usage: " << argv[0] << " [--source=FR000_src.mdl] [--target=FR000_tgt.mdl] --trace=FR000.nbt";
+    LOG(ERROR) << "Usage: " << argv[0] << " [--source=FR000_src.mdl] [--target=FR000_tgt.mdl] [--log=FR000.log] --trace=FR000.nbt";
     return 1;
   }
 
