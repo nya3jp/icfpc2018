@@ -41,7 +41,7 @@ def _run_reference_simulator(src_model_path, tgt_model_path, trace_path):
 
 
 def main(argv):
-    if len(argv) != 4 or argv[1] not in ('A', 'D', 'R'):
+    if len(argv) < 4 or argv[1] not in ('A', 'D', 'R'):
         print('Usage: evaluate.py <A|D|R> <model#> <trace-path>', file=sys.stderr)
         return 1
 
@@ -65,7 +65,10 @@ def main(argv):
 
     default_energy = default_meta['energy']
 
-    new_time, new_energy = _run_simulator(src_model_path, tgt_model_path, trace_path)
+    if len(argv) > 4:
+        new_time, new_energy = _run_reference_simulator(src_model_path, tgt_model_path, trace_path)
+    else:
+        new_time, new_energy = _run_simulator(src_model_path, tgt_model_path, trace_path)
     new_meta = {
         'time': new_time,
         'energy': new_energy,
