@@ -186,7 +186,10 @@ TaskPtr MakeGreedyMoveTask(int bot_id, Point destination) {
   });
 }
 
-TaskPtr MakeLinearFissionTask(int bot_id) {
+TaskPtr MakeLinearFissionTask(int bot_id, int repeat) {
+  if (repeat == 0) {
+    return nullptr;
+  }
   return MakeTask([=](Task::Commander *cmd) -> TaskPtr {
     uint64_t seeds = BOT(bot_id).seeds();
     CHECK(seeds);
@@ -197,7 +200,7 @@ TaskPtr MakeLinearFissionTask(int bot_id) {
     if (num_seeds == 1) {
       return task;
     }
-    return MakeSequenceTask(std::move(task), MakeLinearFissionTask(next_bot_id));
+    return MakeSequenceTask(std::move(task), MakeLinearFissionTask(next_bot_id, repeat - 1));
   });
 }
 
@@ -214,17 +217,18 @@ TaskPtr MakeFissionTask() {
           MakeCommandTask(0, Command::Fission(Delta(0, 1, 0), 0)),   // 0: [3, 40) -> 21
           MakeCommandTask(1, Command::Fission(Delta(0, 1, 0), 0))));  // 1: [2, 3) -> 2
   }
-  CHECK_EQ(num_bots, 40);
+  CHECK_EQ(num_bots % 2, 0);
+  int m = num_bots / 4;
+  int rest = (num_bots % 4) / 2;
   return MakeSequenceTask(
-      MakeCommandTask(0, Command::Fission(Delta(0, 0, 1), 19)),  // 0: [1, 40) -> 1
+      MakeCommandTask(0, Command::Fission(Delta(0, 0, 1), 3 * m - 1 + rest)),  // 0: [1, 40) -> 1
+      MakeCommandTask(1, Command::Fission(Delta(0, 1, 0), 2 * m - 1)),  // 1: [2, 3m+1+rest] -> 2
+      MakeCommandTask(2, Command::Fission(Delta(0, 0, -1), m - 1)),  // 2: [3, 2m+1] -> 3
       MakeBarrierTask(
-          MakeCommandTask(0, Command::Fission(Delta(0, 1, 0), 9)),   // 0: [21, 40) -> 21
-          MakeCommandTask(1, Command::Fission(Delta(0, 1, 0), 9))),  // 1: [2, 21) -> 2
-      MakeBarrierTask(
-          MakeLinearFissionTask(0),
-          MakeLinearFissionTask(1),
-          MakeLinearFissionTask(21),
-          MakeLinearFissionTask(2)));
+          MakeLinearFissionTask(0, m - 1 + rest),
+          MakeLinearFissionTask(1, m - 1 + rest),
+          MakeLinearFissionTask(2, m - 1),
+          MakeLinearFissionTask(3, m - 1)));
 }
 
 TaskPtr MakeGoCeilingTask() {
