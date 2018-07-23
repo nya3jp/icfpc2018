@@ -67,7 +67,7 @@ std::unique_ptr<Solver> CreateSolver(
     return std::unique_ptr<Solver>(new DeleteStrategySolver3(source, target, writer));
   }
   if (name == "fa015") {
-    return std::unique_ptr<Solver>(new FASolver(source, target, writer, true, 15));
+    return std::unique_ptr<Solver>(new FASolver(source, target, writer, false, 15));
   }
   if (name == "reassemble_naive") {
     return std::unique_ptr<Solver>(new ReassembleNaiveSolver(source, target, writer, FLAGS_disasm, FLAGS_asm));

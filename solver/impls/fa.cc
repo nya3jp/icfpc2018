@@ -6,14 +6,14 @@ void FA::Decide(TickExecutor::Commander *commander) {
   const std::map<int, BotState> &bots = commander->field()->bots();
 
   if (start_x_ < 0) {
-    start_x_ = matrix.Resolution();
+    start_x_ = model_->Resolution();
     end_x_ = 0;
-    start_z_ = matrix.Resolution();
+    start_z_ = model_->Resolution();
     end_z_ = 0;
     height_ = 0;
-    for (int x = 0; x < matrix.Resolution(); ++x) {
-      for (int y = 0; y < matrix.Resolution(); ++y) {
-        for (int z = 0; z < matrix.Resolution(); ++z) {
+    for (int x = 0; x < model_->Resolution(); ++x) {
+      for (int y = 0; y < model_->Resolution(); ++y) {
+        for (int z = 0; z < model_->Resolution(); ++z) {
           if (model_->Get(x, y, z)) {
             start_x_ = std::min(x, start_x_);
             end_x_ = std::max(x, end_x_);
@@ -63,78 +63,104 @@ void FA::Decide(TickExecutor::Commander *commander) {
   }
 
   if (num_ == 15) {
-    if (bots.size() == 0) { exit(1); }
-    if (bots.size() == 1) {
-      for (const auto &bot : bots) {
-        if (bot.second.position().z < start_z_ - 1) {
-          commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::Z, std::min(15, start_z_ - 1))));
-          return;
+    if (state_ == State::FISSION) {
+      if (bots.size() == 0) { exit(1); }
+      if (bots.size() == 1) {
+        for (const auto &bot : bots) {
+          if (bot.second.position().z < start_z_) {
+            commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::Z, std::min(15, start_z_))));
+            return;
+          }
+        }
+        for (const auto &bot : bots) {
+          if (bot.second.position().x < start_x_) {
+            commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::X, std::min(15, start_x_))));
+            return;
+          }
         }
       }
-      for (const auto &bot : bots) {
-        if (bot.second.position().x < start_x_) {
-          commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::X, std::min(15, start_x_))));
-          return;
+      if (bots.size() <= (end_x_ - start_x_ + 1) / 2) {
+        for (const auto &bot : bots) {
+          if (bot.second.position().x == cur_max_x) {
+            auto seed_size = __builtin_popcountl(bot.second.seeds());
+            std::cout << "fission" << std::endl;
+            commander->Set(bot.second.id(), Command::Fission(Delta(1, 0, 0), seed_size - (end_z_ - start_z_ + 1)));
+          }
         }
+        return;
       }
-    }
-    if (bots.size() <= (end_x_ - start_x_ + 3) / 2) {
-      for (const auto &bot : bots) {
-        if (bot.second.position().x == cur_max_x) {
-          auto seed_size = __builtin_popcountl(bot.second.seeds());
-          commander->Set(bot.second.id(), Command::Fission(Delta(1, 0, 0), seed_size - (end_z_ - start_z_ + 1)));
+      if (bots.size() < (end_x_ - start_x_ + 1) / 2 * (end_z_ - start_z_ + 1)) {
+        for (const auto &bot : bots) {
+          if (bot.second.position().z == cur_max_z) {
+            auto seed_size = __builtin_popcountl(bot.second.seeds());
+            std::cout << "fission" << std::endl;
+            commander->Set(bot.second.id(), Command::Fission(Delta(0, 0, 1), seed_size - 1));
+          }
         }
+        return;
       }
-      return;
-    }
-    if (bots.size() < (end_x_ - start_x_ + 3) / 2 * (end_z_ - start_z_ + 1)) {
-      for (const auto &bot : bots) {
-        if (bot.second.position().z == cur_max_z) {
-          auto seed_size = __builtin_popcountl(bot.second.seeds());
-          commander->Set(bot.second.id(), Command::Fission(Delta(0, 0, 1), seed_size - 1));
-        }
+      if (start_x_ != cur_min_x) {
+        std::cout << "gvgggggggggggg" << std::endl;
+        exit(1);
       }
-      return;
+      if (start_z_ != cur_min_z) {
+        std::cout << "gvgggzzzzzzzzz" << std::endl;
+        exit(1);
+      }
+      if (end_z_ != cur_max_z) {
+        std::cout << "gvgggzZZZZZZZz" << std::endl;
+        exit(1);
+      } else {
+        std::cout << "ZZZZZZZZZZZZ" << cur_max_z << std::endl;
+      }
+      state_ = State::RETURN;
     }
     if (cur_min_x == start_x_) {
-      if (cur_max_y < height_ + 1) {
+      std::cout << "______" << std::endl;
+      if (cur_max_y <= height_ + 1) {
         std::cout << "debug0" << std::endl;
         bool any = false;
         for (const auto &bot : bots) {
           auto pos = bot.second.position();
-          if (pos.y > 0 && matrix.Get(pos.x, pos.y - 1, pos.z)) {
-            commander->Set(bot.second.id(), Command::Fill(Delta(0, -1, 0)));
+          if (pos.y > 0 && !matrix.Get(pos.x, pos.y - 1, pos.z) && model_->Get(pos.x, pos.y - 1, pos.z)) {
+            auto ret = commander->Set(bot.second.id(), Command::Fill(Delta(0, -1, 0)));
+            if (pos.y - 1 == 18) {
+              std::cout << "===================================================" << pos + Delta(0, -1, 0) << std::endl;
+            }
             any = true;
           }
         }
         if (any) { return; }
-        std::cout << "debug1" << std::endl;
-        for (const auto &bot : bots) {
-          commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::Y, 1)));
+        if (cur_max_y == height_ + 1) {
+          int hoge = 0;
+          for (const auto &bot : bots) {
+            if (bot.second.position().x <= (end_x_ - start_x_ + 3) / 2 + start_x_) {
+              hoge = std::max(hoge, bot.second.position().x);
+            }
+          }
+          for (const auto &bot : bots) {
+            if (bot.second.position().x == hoge) {
+              commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::X, (end_x_ - start_x_ + 3) / 2)));
+            }
+          }
+          return;
+        } else {
+          for (const auto &bot : bots) {
+            commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::Y, 1)));
+          }
+          return;
         }
-        return;
       } else {
         std::cout << "debug2" << std::endl;
-        int hoge = 0;
-        for (const auto &bot : bots) {
-          if (bot.second.position().x <= (end_x_ - start_x_ + 3) / 2 + start_x_) {
-            hoge = std::max(hoge, bot.second.position().x);
-          }
-        }
-        for (const auto &bot : bots) {
-          if (bot.second.position().x == hoge) {
-            commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::X, (end_x_ - start_x_ + 3) / 2)));
-          }
-        }
-        return;
       }
     } else {
+      std::cout << "=====" << std::endl;
       if (cur_max_y > 0) {
         std::cout << "debug3" << std::endl;
         bool any = false;
         for (const auto &bot : bots) {
           auto pos = bot.second.position();
-          if (pos.y + 1 < matrix.Resolution() && matrix.Get(pos.x, pos.y + 1, pos.z)) {
+          if (pos.y + 1 < matrix.Resolution() && !matrix.Get(pos.x, pos.y + 1, pos.z) && model_->Get(pos.x, pos.y + 1, pos.z)) {
             commander->Set(bot.second.id(), Command::Fill(Delta(0, 1, 0)));
             any = true;
           }
@@ -150,45 +176,68 @@ void FA::Decide(TickExecutor::Commander *commander) {
         bool any = false;
         for (const auto &bot : bots) {
           auto pos = bot.second.position();
-          if (matrix.Get(pos.x, pos.y + 1, pos.z)) {
+          if (!matrix.Get(pos.x, pos.y + 1, pos.z)&&model_->Get(pos.x, pos.y + 1, pos.z)) {
             commander->Set(bot.second.id(), Command::Fill(Delta(0, 1, 0)));
             any = true;
           }
         }
         if (any) { return; }
-        if (cur_max_z > cur_min_z) {
-          std::cout << "debug6 " << bots.size() << std::endl;
-          for (const auto &bot : bots) {
-            if (bot.second.position().z == cur_max_z) {
-              std::cout << "FS" << std::endl;
-              commander->Set(bot.second.id(), Command::FusionS(Delta(0, 0, -1)));
-            } else if (bot.second.position().z == cur_next_z) {
-              std::cout << "FP" << std::endl;
-              commander->Set(bot.second.id(), Command::FusionP(Delta(0, 0, 1)));
-            }
-          }
-          return;
-        } else if (cur_max_x > cur_min_x) {
+        std::cout << "debug6: " << bots.size() << std::endl;
+        for (const auto &bot : bots) {
+          std::cout << bot.second.id() << " " << bot.second.position() << std::endl;
+        }
+        std::cout << "debug6.5" << std::endl;
+        if (cur_max_x > cur_min_x) {
           std::cout << "debug7" << std::endl;
           for (const auto &bot : bots) {
             if (bot.second.position().x == cur_max_x) {
+//              std::cout << bot.second.id() << "FS " << bot.second.position() << std::endl;
               commander->Set(bot.second.id(), Command::FusionS(Delta(-1, 0, 0)));
             } else if (bot.second.position().x == cur_next_x) {
+//              std::cout << bot.second.id() << "FP " << bot.second.position() << std::endl;
               commander->Set(bot.second.id(), Command::FusionP(Delta(1, 0, 0)));
             }
           }
           return;
-        } else {
-          std::cout << "debug7" << std::endl;
+        }
+        if (cur_max_z > cur_min_z) {
+          std::cout << "debug6 " << bots.size() << std::endl;
           for (const auto &bot : bots) {
-            if (bot.second.position().x > 0) {
-              commander->Set(bot.second.id(),
-                             Command::SMove(LinearDelta(Axis::X, std::min(15, bot.second.position().x))));
-            } else if (bot.second.position().z > 0) {
-              commander->Set(bot.second.id(),
-                             Command::SMove(LinearDelta(Axis::Z, std::min(15, bot.second.position().z))));
+            if (bot.second.position().z == cur_max_z) {
+              std::cout << "FS " << bot.second.position() << std::endl;
+              auto ret = commander->Set(bot.second.id(), Command::FusionS(Delta(0, 0, -1)));
+              std::cout << ret << std::endl;
+            } else if (bot.second.position().z == cur_next_z) {
+              std::cout << "FP " << bot.second.position() << std::endl;
+              auto ret = commander->Set(bot.second.id(), Command::FusionP(Delta(0, 0, 1)));
+              std::cout << ret << std::endl;
             } else {
+
+              std::cout << "HOGE " << bot.second.position() << std::endl;
+            }
+          }
+          return;
+        }
+        {
+          std::cout << "debug8" << std::endl;
+          for (const auto &bot : bots) {
+            if (bot.second.position().z > 0) {
+              std::cout << "debug10" << std::endl;
+              commander->Set(bot.second.id(),
+                             Command::SMove(LinearDelta(Axis::Z, -std::min(15, bot.second.position().z))));
+              return;
+            }
+            if (bot.second.position().x > 0) {
+              std::cout << bots.size() << std::endl;
+              std::cout << "debug9 " << bot.second.position().x << std::endl;
+              commander->Set(bot.second.id(),
+                             Command::SMove(LinearDelta(Axis::X, -std::min(15, bot.second.position().x))));
+              return;
+            }
+            {
+              std::cout << "debug11" << std::endl;
               commander->Set(bot.second.id(), Command::Halt());
+              return;
             }
           }
         }
@@ -199,390 +248,6 @@ void FA::Decide(TickExecutor::Commander *commander) {
     return;
   }
 
-  auto x_size = (end_x_ - start_x_ - 1) / 29 + 2;
-  auto y_size = std::min(40 / x_size, (height_ - 1) / 29 + 2);
-
-  if (state_ == State::FISSION) {
-    // zをstart地点へ
-    if (bots.size() == 1) {
-      for (const auto &bot : bots) {
-        if (bot.second.position().z < start_z_ - 1) {
-          commander->Set(
-              bot.second.id(),
-              Command::SMove(LinearDelta(Axis::Z, std::min(15, start_z_ - bot.second.position().z - 1))));
-          return;
-        }
-      }
-    }
-    // xをstart地点へ
-    if (bots.size() == 1) {
-      for (const auto &bot : bots) {
-        if (bot.second.position().x < start_x_) {
-          commander->Set(
-              bot.second.id(),
-              Command::SMove(LinearDelta(Axis::X, std::min(15, start_x_ - bot.second.position().x))));
-          return;
-        }
-      }
-    }
-
-    // x方向に展開
-    if (bots.size() < x_size) {
-      for (const auto &bot : bots) {
-        if (bot.second.position().x % 29 != start_x_ % 29) {
-          commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::X, 14)));
-          return;
-        }
-      }
-      for (const auto &bot : bots) {
-        auto seeds_size = __builtin_popcountl(bot.second.seeds());
-        if (seeds_size > y_size) {
-          commander->Set(bot.second.id(), Command::Fission(Delta(1, 0, 0), seeds_size - y_size));
-          return;
-        }
-      }
-    }
-    // x方向、最後の一個
-    for (const auto &bot : bots) {
-      if (bot.second.position().x % 29 != start_x_ % 29 &&
-          bot.second.position().x < end_x_) {
-        commander->Set(bot.second.id(),
-                       Command::SMove(LinearDelta(Axis::X, std::min(15, end_x_ - bot.second.position().x))));
-        return;
-      }
-    }
-
-    // y方向に展開
-    if (bots.size() < x_size * y_size) {
-      {
-        bool any = false;
-        for (const auto &bot : bots) {
-          if (bot.second.position().y % 29 != 0) {
-            bool set = commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::Y, 14)));
-            any = true;
-          }
-        }
-        if (any) { return; }
-      }
-      for (const auto &bot : bots) {
-        auto seeds_size = __builtin_popcountl(bot.second.seeds());
-        if (seeds_size >= 1) {
-          commander->Set(bot.second.id(), Command::Fission(Delta(0, 1, 0), seeds_size - 1));
-        }
-      }
-      return;
-    }
-    {
-      // y方向、最後の一個
-      bool any = false;
-      for (const auto &bot : bots) {
-        if (bot.second.position().y % 29 != 0 &&
-            bot.second.position().y < height_) {
-          commander->Set(bot.second.id(),
-                         Command::SMove(LinearDelta(Axis::Y, std::min(14, height_ - bot.second.position().y))));
-          any = true;
-        }
-      }
-
-      if (any) { return; }
-      //展開終了, Flipして次のturn
-      state_ = State::DELETION;
-      commander->Set(0, Command::Flip());
-      dz_ = 1;
-      return;
-    }
-  }
-  if (state_ == State::DELETION) {
-
-    auto current_pos = bots.find(0)->second.position();
-    int cur_min_y = matrix.Resolution();
-    int cur_max_y = 0;
-    for (const auto &bot : bots) {
-      cur_min_y = std::min(cur_min_y, bot.second.position().y);
-      cur_max_y = std::max(cur_max_y, bot.second.position().y);
-    }
-
-    // 終了判定
-    if (dz_ > 0 && current_pos.z == end_z_ + 1) {
-      dz_ = -1;
-      // 埋まっているならまずfissionして、その後(0,0,0)へ
-      if (cur_max_y >= height_) {
-        state_ = State::FUSION;
-        commander->Set(0, Command::Flip());
-        return;
-      } else {
-        state_ = State::ELEVATE;
-        return Decide(commander);
-      }
-    } else if (dz_ < 0 && current_pos.z == start_z_ - 1) {
-      dz_ = 1;
-      // 埋まっているならまずfissionして、その後(0,0,0)へ
-      if (cur_max_y >= height_) {
-        state_ = State::FUSION;
-        commander->Set(0, Command::Flip());
-        return;
-      } else {
-        state_ = State::ELEVATE;
-        return Decide(commander);
-      }
-    } else if (cur_max_y >= height_ && dz_ > 0 && current_pos.z == end_z_) {
-      dz_ = -1;
-      state_ = State::FUSION;
-      commander->Set(0, Command::Flip());
-      return;
-    } else if (cur_max_y >= height_ && dz_ < 0 && current_pos.z == start_z_) {
-      dz_ = 1;
-      state_ = State::FUSION;
-      commander->Set(0, Command::Flip());
-      return;
-    }
-
-    // ここにいるということは消すturn
-    // 領域を4つに分けて,順番に消して行く
-    bool delete_odd_odd = false;
-    bool delete_odd_even = false;
-    bool delete_even_odd = false;
-    bool delete_even_even = false;
-    for (int x = start_x_; x <= end_x_; ++x) {
-      for (int y = cur_min_y; y <= cur_max_y; ++y) {
-        if (matrix.Get(x, y, current_pos.z + dz_)) {
-          auto odd_x = ((x - start_x_) / 29) % 2 == 1;
-          auto odd_y = ((y - cur_min_y) / 29) % 2 == 1;
-          if (odd_x && odd_y) {
-            delete_odd_odd = true;
-          }
-          if (odd_x && !odd_y) {
-            delete_odd_even = true;
-          }
-          if (!odd_x && odd_y) {
-            delete_even_odd = true;
-          }
-          if (!odd_x && !odd_y) {
-            delete_even_even = true;
-          }
-        }
-      }
-    }
-    // 一度に消す領域は一つまで
-    if (delete_odd_odd) {
-      delete_odd_even = delete_even_odd = delete_even_even = false;
-    }
-    if (delete_odd_even) {
-      delete_even_odd = delete_even_even = false;
-    }
-    if (delete_even_odd) {
-      delete_even_even = false;
-    }
-    // 消去パート
-    if (delete_odd_odd || delete_odd_even || delete_even_odd || delete_even_even) {
-      for (const auto &bot : bots) {
-        auto x_pos = bot.second.position().x;
-        auto y_pos = bot.second.position().y;
-        auto x_p_s = x_pos - start_x_;
-        auto y_p_s = y_pos - cur_min_y;
-        auto x_odd = (x_p_s % 29 == 0 && (x_p_s / 29) % 2 == 1) || (x_p_s % 29 != 0 && (x_p_s / 29) % 2 == 0);
-        auto y_odd = (y_p_s % 29 == 0 && (y_p_s / 29) % 2 == 1) || (y_p_s % 29 != 0 && (y_p_s / 29) % 2 == 0);
-
-        int x_diff = 0;
-        auto nd = Delta(0, 0, dz_);
-        if ((x_odd && (delete_odd_odd || delete_odd_even)) || (!x_odd && (delete_even_odd || delete_even_even))) {
-          // x は +
-          x_diff = 29;
-          if (x_pos == end_x_) {
-            x_diff = 0;
-          }
-        } else {
-          // x は -
-          x_diff = -29;
-          if (x_pos == start_x_) { continue; }
-        }
-        x_diff = std::min(x_diff, end_x_ - x_pos);
-        x_diff = (x_p_s % 29 != 0 && x_diff < 0) ? -(x_p_s - (x_p_s / 29) * 29) : x_diff;
-
-        int y_diff = 0;
-        if ((y_odd && (delete_odd_odd || delete_even_odd)) || (!y_odd && (delete_odd_even || delete_even_even))) {
-          // y は +
-          y_diff = 29;
-          if (y_pos == cur_max_y) {
-            y_diff = 0;
-          }
-        } else {
-          // y は -
-          y_diff = -29;
-          if (y_pos == cur_min_y) { continue; }
-        }
-        y_diff = std::min(y_diff, cur_max_y - bot.second.position().y);
-        y_diff = (y_p_s % 29 != 0 && y_diff < 0) ? -(y_p_s - (y_p_s / 29) * 29) : y_diff;
-
-        auto x_min = std::min(x_pos, x_pos + x_diff);
-        auto x_max = std::max(x_pos, x_pos + x_diff);
-        auto y_min = std::min(y_pos, y_pos + y_diff);
-        auto y_max = std::max(y_pos, y_pos + y_diff);
-
-        bool any_filled = false;
-        for (int x = x_min; x <= x_max; ++x) {
-          for (int y = y_min; y <= y_max; ++y) {
-            if (matrix.Get(x, y, current_pos.z + dz_)) {
-              any_filled = true;
-            }
-          }
-        }
-        if (!any_filled) { continue; }
-
-        if (x_diff == 0 && y_diff == 0) {
-          commander->Set(bot.second.id(), Command::Void(nd));
-        } else {
-          commander->Set(bot.second.id(), Command::GVoid(nd, Delta(x_diff, y_diff, 0)));
-        }
-      }
-    } else {
-      // dz_に進む
-      for (const auto &bot : bots) {
-        commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::Z, dz_)));
-      }
-    }
-    return;
-  }
-  if (state_ == State::ELEVATE) {
-    int cur_min_y = matrix.Resolution();
-    int cur_max_y = 0;
-    for (const auto &bot : bots) {
-      cur_min_y = std::min(cur_min_y, bot.second.position().y);
-      cur_max_y = std::max(cur_max_y, bot.second.position().y);
-    }
-
-    if (cur_max_y >= height_) {
-      state_ = State::DELETION;
-      return Decide(commander);
-    }
-    if (cur_max_y % (29 * (y_size - 1)) ||
-        (dz_ < 0 && cur_min_y % (58 * (y_size - 1)) == 0) ||
-        (dz_ > 0 && cur_max_y % (58 * (y_size - 1)) == 0)) {
-      for (const auto &bot : bots) {
-        if (bot.second.position().y % 29 == 15) {
-          commander->Set(bot.second.id(),
-                         Command::SMove(LinearDelta(Axis::Y, std::min(14, height_ - bot.second.position().y))));
-        } else {
-          commander->Set(bot.second.id(),
-                         Command::SMove(LinearDelta(Axis::Y, std::min(15, height_ - bot.second.position().y))));
-        }
-      }
-      return;
-    } else {
-      state_ = State::DELETION;
-      return Decide(commander);
-    }
-    return;
-  }
-  if (state_ == State::FUSION) {
-
-    { // y方向のfusion
-      int cur_min_y = matrix.Resolution();
-      int cur_max_y = 0;
-      for (const auto &bot : bots) {
-        cur_min_y = std::min(cur_min_y, bot.second.position().y);
-        cur_max_y = std::max(cur_max_y, bot.second.position().y);
-      }
-      int cur_next_y = 0;
-      for (const auto &bot : bots) {
-        if (bot.second.position().y != cur_max_y) {
-          cur_next_y = std::max(cur_next_y, bot.second.position().y);
-        }
-      }
-      if (bots.size() > x_size) {
-        bool any = false;
-        for (const auto &bot : bots) {
-          if (bot.second.position().y == cur_max_y) {
-            if (bot.second.position().y != cur_next_y + 1) {
-              // 移動
-              auto target_y = cur_next_y + 1;
-              commander->Set(bot.second.id(),
-                             Command::SMove(LinearDelta(Axis::Y, std::max(-15, target_y - bot.second.position().y))));
-              any = true;
-            }
-          }
-        }
-        if (any) { return; }
-        for (const auto &bot : bots) {
-          if (bot.second.position().y == cur_max_y) {
-            commander->Set(bot.second.id(), Command::FusionS(Delta(0, -1, 0)));
-          } else if (bot.second.position().y == cur_max_y - 1) {
-            commander->Set(bot.second.id(), Command::FusionP(Delta(0, 1, 0)));
-          }
-        }
-        return;
-      }
-    }
-    { // x方向のfusion
-      int cur_min_x = matrix.Resolution();
-      int cur_max_x = 0;
-      for (const auto &bot : bots) {
-        cur_min_x = std::min(cur_min_x, bot.second.position().x);
-        cur_max_x = std::max(cur_max_x, bot.second.position().x);
-      }
-      int cur_next_x = 0;
-      for (const auto &bot : bots) {
-        if (bot.second.position().x != cur_max_x) {
-          cur_next_x = std::max(cur_next_x, bot.second.position().x);
-        }
-      }
-      if (bots.size() > 1) {
-        bool any = false;
-        for (const auto &bot : bots) {
-          if (bot.second.position().x == cur_max_x) {
-            if (bot.second.position().x != cur_next_x + 1) {
-              // 移動
-              auto target_x = cur_next_x + 1;
-              commander->Set(bot.second.id(),
-                             Command::SMove(LinearDelta(Axis::X, std::max(-15, target_x - bot.second.position().x))));
-              any = true;
-            }
-          }
-        }
-        if (any) { return; }
-        for (const auto &bot : bots) {
-          if (bot.second.position().x == cur_max_x) {
-            commander->Set(bot.second.id(), Command::FusionS(Delta(-1, 0, 0)));
-          } else if (bot.second.position().x == cur_max_x - 1) {
-            commander->Set(bot.second.id(), Command::FusionP(Delta(1, 0, 0)));
-          }
-        }
-        return;
-      }
-    }
-    {
-      // (0, 0, 0)へ
-      for (const auto &bot : bots) {
-        if (bot.second.position().x > 0) {
-          commander->Set(bot.second.id(),
-                         Command::SMove(LinearDelta(Axis::X, std::max(-15, -bot.second.position().x))));
-          return;
-        }
-        if (bot.second.position().y > 0) {
-          commander->Set(bot.second.id(),
-                         Command::SMove(LinearDelta(Axis::Y, std::max(-15, -bot.second.position().y))));
-          return;
-        }
-        if (bot.second.position().z > 0) {
-          commander->Set(bot.second.id(),
-                         Command::SMove(LinearDelta(Axis::Z, std::max(-15, -bot.second.position().z))));
-          return;
-        }
-      }
-    }
-    // 終わり
-    if (halt_) {
-      for (const auto &bot : bots) {
-        commander->Set(bot.second.id(), Command::Halt());
-      }
-    }
-      // FIXME: とりあえず初期位置のbotのIDが0でないといけないassemblerがいるのでチェックする
-    else {
-      CHECK(bots.size() == 1 && bots.cbegin()->first == 0);
-    }
-    finished_ = true;
-    return;
-  }
 }
 
 FASolver::FASolver(
@@ -597,7 +262,7 @@ FASolver::FASolver(
 void FASolver::Solve() {
   FA strategy(model_, halt_, num_);
   TickExecutor executor(&strategy);
-  while (!strategy.Finished()) {
+  while (!field_.IsHalted()) {
     executor.Run(&field_, writer_);
   }
 }

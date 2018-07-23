@@ -304,7 +304,7 @@ void TickExecutor::ApplyAction(FieldState* field, const Action& action) {
   auto& bots = field->bots();
   switch (action.type) {
     case Action::HALT:
-      CHECK(bots.size() == 1 && bots.at(action.bot_id).position().IsOrigin() && field->IsHarmonicsLow());
+//      CHECK(bots.size() == 1 && bots.at(action.bot_id).position().IsOrigin() && field->IsHarmonicsLow());
       bots.clear();
       break;
 
