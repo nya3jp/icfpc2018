@@ -262,6 +262,21 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
         y_diff = std::min(y_diff, cur_max_y - bot.second.position().y);
         y_diff = (y_p_s % 29 != 0 && y_diff < 0) ? -(y_p_s - (y_p_s / 29) * 29) : y_diff;
 
+        auto x_min = std::min(x_pos, x_pos + x_diff);
+        auto x_max = std::max(x_pos, x_pos + x_diff);
+        auto y_min = std::min(y_pos, y_pos + y_diff);
+        auto y_max = std::max(y_pos, y_pos + y_diff);
+
+        bool any_filled = false;
+        for (int x = x_min; x <= x_max; ++x) {
+          for (int y = y_min; y <= y_max; ++y) {
+            if (matrix.Get(x, y, current_pos.z + dz_)) {
+              any_filled = true;
+            }
+          }
+        }
+        if (!any_filled) { continue; }
+
         if (x_diff == 0 && y_diff == 0) {
           commander->Set(bot.second.id(), Command::Void(nd));
         } else {
