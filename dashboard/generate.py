@@ -33,7 +33,7 @@ def main():
             if prefix in ('FA', 'FR'):
                 link += '&target=data/models/%s_tgt.mdl' % name
             if prefix in ('FD', 'FR'):
-                link += '&source=data/models/%s_tgt.mdl' % name
+                link += '&source=data/models/%s_src.mdl' % name
             with open(os.path.join(defaults_dir, '%s.json' % name)) as f:
                 default_energy = json.load(f)['energy']
             with open(os.path.join(traces_dir, '%s.json' % name)) as f:
