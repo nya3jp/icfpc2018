@@ -12,11 +12,13 @@
 #include "solver/impls/bbgvoid.h"
 #include "solver/impls/bbgvoid_task.h"
 #include "solver/impls/fission_naive.h"
+#include "solver/impls/generic_task.h"
 #include "solver/impls/naive.h"
 #include "solver/impls/task_executor_example.h"
 #include "solver/impls/tick_executor_example.h"
 #include "solver/io/model_reader.h"
 #include "solver/io/trace_writer_impl.h"
+#include "solver/tasks/plane_assembler.h"
 
 DEFINE_string(source, "", "Path to source model file");
 DEFINE_string(target, "", "Path to target model file");
@@ -36,6 +38,9 @@ std::unique_ptr<Solver> CreateSolver(
   }
   if (name == "fission_naive") {
     return std::unique_ptr<Solver>(new FissionNaiveSolver(source, target, writer));
+  }
+  if (name == "plane_assembler") {
+    return std::unique_ptr<Solver>(new GenericTaskSolver(MakePlaneAssemblerTask(), source, target, writer));
   }
   if (name == "tick_executor_example") {
     return std::unique_ptr<Solver>(new TickExecutorExampleSolver(source, target, writer));

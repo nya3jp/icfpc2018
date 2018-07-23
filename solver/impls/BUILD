@@ -91,3 +91,18 @@ cc_library(
         "@com_github_google_glog//:glog",
     ],
 )
+
+cc_library(
+    name = "generic_task",
+    srcs = ["generic_task.cc"],
+    hdrs = ["generic_task.h"],
+    deps = [
+        ":base",
+        "//solver/data:matrix",
+        "//solver/data:state",
+        "//solver/io:trace_writer",
+        "//solver/support:task",
+        "//solver/support:task_executor",
+        "@com_github_google_glog//:glog",
+    ],
+)

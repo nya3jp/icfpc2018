@@ -25,6 +25,17 @@ struct Delta {
 
   explicit Delta(int dx = 0, int dy = 0, int dz = 0) : dx(dx), dy(dy), dz(dz) {}
 
+  int GetAxis(Axis axis) {
+    switch (axis) {
+      case Axis::X:
+        return dx;
+      case Axis::Y:
+        return dy;
+      case Axis::Z:
+        return dz;
+    }
+  }
+
   inline bool IsZero() const {
     return dx == 0 && dy == 0 && dz == 0;
   }

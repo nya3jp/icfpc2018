@@ -47,9 +47,6 @@ TaskPtr MakeFinalFusionTask() {
       CHECK_EQ(bot.position(), Point(bot_id, 0, 0));
     }
 
-    const auto& primary_bot = bots.find(num_bots - 2)->second;
-    const auto& secondary = bots.find(num_bots - 1)->second;
-
     bool primary_success = commander->Set(
         num_bots - 2, Command::FusionP(Delta(1, 0, 0)));
     bool secondary_success = commander->Set(
@@ -273,5 +270,5 @@ FissionNaiveSolver::FissionNaiveSolver(
 void FissionNaiveSolver::Solve() {
   TaskExecutor executor(MakeMasterTask());
   executor.Run(&field_, writer_);
-  CHECK(field_.IsHalted()) << "Not halted, but expected";
+  CHECK(field_.IsHalted());
 }
