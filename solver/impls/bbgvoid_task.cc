@@ -280,7 +280,7 @@ void BBGvoidTaskSolver::Solve() {
   Region bb = CalculateBB();
   TaskExecutor executor(MakeMasterTask(bb, halt_));
   executor.Run(&field_, writer_);
-  CHECK(field_.IsHalted());
+  CHECK(!halt_ || field_.IsHalted());
 }
 
 Region BBGvoidTaskSolver::CalculateBB() {
