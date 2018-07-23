@@ -10,6 +10,7 @@ cc_binary(
         "//solver/impls:bbgvoid",
         "//solver/impls:bbgvoid_task",
         "//solver/impls:delete_strategy",
+        "//solver/impls:delete_strategy3",
         "//solver/impls:fission_naive",
         "//solver/impls:generic_task",
         "//solver/impls:naive",

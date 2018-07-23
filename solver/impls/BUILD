@@ -122,6 +122,20 @@ cc_library(
 )
 
 cc_library(
+    name = "delete_strategy3",
+    srcs = ["deleter3.cc"],
+    hdrs = ["deleter3.h"],
+    deps = [
+        ":base",
+        "//solver/data:matrix",
+        "//solver/data:state",
+        "//solver/io:trace_writer",
+        "//solver/support:tick_executor",
+        "@com_github_google_glog//:glog",
+    ],
+)
+
+cc_library(
     name = "reassemble_naive",
     srcs = ["reassemble_naive.cc"],
     hdrs = ["reassemble_naive.h"],
