@@ -203,8 +203,8 @@ function init() {
         if (i != -1) {
             timer = window.setInterval(function(){
                 v = Number(sliderTick.value);
-                sliderTick.value = v + 1;
-                changeTick(v + 1);
+                sliderTick.value = Math.min(v + 1, Number(sliderTick.max));
+                changeTick(Number(sliderTick.value));
             }, i);
         }
     }
