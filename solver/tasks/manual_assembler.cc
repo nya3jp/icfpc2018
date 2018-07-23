@@ -286,6 +286,12 @@ TaskPtr MakePointFillTask(Point p) {
       MakeCommandTask(0, Command::Fill(Delta(0, -1, 0))));
 }
 
+TaskPtr MakePointVoidTask(Point p) {
+  return MakeSequenceTask(
+      MakeGreedyMoveTask(0, p + Delta(0, 1, 0)),
+      MakeCommandTask(0, Command::Void(Delta(0, -1, 0))));
+}
+
 TaskPtr MakeGroupFillTask(Region region, std::vector<std::pair<Point, Point>> diagonals) {
   std::vector<TaskPtr> move_tasks;
   std::vector<TaskPtr> gfill_tasks;
@@ -297,6 +303,19 @@ TaskPtr MakeGroupFillTask(Region region, std::vector<std::pair<Point, Point>> di
     ++bot_id;
   }
   return MakeSequenceTask(MakeBarrierTask(std::move(move_tasks)), MakeBarrierTask(std::move(gfill_tasks)));
+}
+
+TaskPtr MakeGroupVoidTask(Region region, std::vector<std::pair<Point, Point>> diagonals) {
+  std::vector<TaskPtr> move_tasks;
+  std::vector<TaskPtr> gvoid_tasks;
+  int bot_id = 0;
+  for (const auto& diagonal : diagonals) {
+    Delta adj(diagonal.first.x == region.mini.x ? -1 : 1, 0, 0);
+    move_tasks.emplace_back(MakeGreedyMoveTask(bot_id, diagonal.first + adj));
+    gvoid_tasks.emplace_back(MakeCommandTask(bot_id, Command::GVoid(Delta() - adj, diagonal.second - diagonal.first)));
+    ++bot_id;
+  }
+  return MakeSequenceTask(MakeBarrierTask(std::move(move_tasks)), MakeBarrierTask(std::move(gvoid_tasks)));
 }
 
 }  // namespace
@@ -324,6 +343,31 @@ TaskPtr Fill(Region region) {
   CHECK_EQ(diagonals.size(), 1 << dim);
 
   return MakeGroupFillTask(region, std::vector<std::pair<Point, Point>>(diagonals.begin(), diagonals.end()));
+}
+
+TaskPtr Void(Region region) {
+  int dim =
+      (region.mini.x != region.maxi.x ? 1 : 0) +
+      (region.mini.y != region.maxi.y ? 1 : 0) +
+      (region.mini.z != region.maxi.z ? 1 : 0);
+  if (dim == 0) {
+    return MakePointVoidTask(region.mini);
+  }
+
+  std::set<std::pair<Point, Point>> diagonals;
+  for (int xa : {region.mini.x, region.maxi.x}) {
+    int xb = (xa == region.mini.x ? region.maxi.x : region.mini.x);
+    for (int ya : {region.mini.y, region.maxi.y}) {
+      int yb = (ya == region.mini.y ? region.maxi.y : region.mini.y);
+      for (int za : {region.mini.z, region.maxi.z}) {
+        int zb = (za == region.mini.z ? region.maxi.z : region.mini.z);
+        diagonals.insert(std::make_pair(Point(xa, ya, za), Point(xb, yb, zb)));
+      }
+    }
+  }
+  CHECK_EQ(diagonals.size(), 1 << dim);
+
+  return MakeGroupVoidTask(region, std::vector<std::pair<Point, Point>>(diagonals.begin(), diagonals.end()));
 }
 
 TaskPtr MakeManualAssemblerTask(TaskPtr main_task) {
