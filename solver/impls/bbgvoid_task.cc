@@ -124,7 +124,8 @@ TaskPtr MakeFissionTask(Region& bb_) {
           // slight optimization: fill corners to avoid +3 penalty
           int dx = bot.position().x == bb_.mini.x - 1 ? 1 : -1;
           int dz = bot.position().z == bb_.mini.z - 1 ? 1 : -1;
-          if (!commander->field()->matrix().Get(bot.position().x + dx, bot.position().y, bot.position().z + dz)) {
+          if (bot.position().y == 0 &&  // TODO: grounded check
+              !commander->field()->matrix().Get(bot.position().x + dx, bot.position().y, bot.position().z + dz)) {
             bool success = commander->Set(bot_id, Command::Fill(Delta(dx, 0, dz)));
             CHECK(success);
           }
