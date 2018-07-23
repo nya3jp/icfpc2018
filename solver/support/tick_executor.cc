@@ -11,7 +11,7 @@ bool TickExecutor::Commander::Set(int bot_id, const Command& command) {
       if (Interfere(fd)) {
         return false;
       }
-      if (command.type != gvoids_) {
+      if (command.type == Command::GFILL) {
         // matrix.placeableでなくてもvoidはOK ((0,0,0)や(R-1,R-1,R-1)など)
         if (!field_->matrix().IsPlaceable(fd)) {
           return false;
