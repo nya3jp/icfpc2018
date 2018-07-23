@@ -19,6 +19,7 @@
 #include "solver/io/model_reader.h"
 #include "solver/io/trace_writer_impl.h"
 #include "solver/tasks/line_assembler.h"
+#include "solver/impls/deleter.h"
 
 DEFINE_string(source, "", "Path to source model file");
 DEFINE_string(target, "", "Path to target model file");
@@ -47,6 +48,9 @@ std::unique_ptr<Solver> CreateSolver(
   }
   if (name == "task_executor_example") {
     return std::unique_ptr<Solver>(new TaskExecutorExampleSolver(source, target, writer));
+  }
+  if (name == "delete") {
+    return std::unique_ptr<Solver>(new DeleteStrategySolver(source, target, writer));
   }
   LOG(FATAL) << "No solver impl found. Set --impl correctly.";
   return nullptr;

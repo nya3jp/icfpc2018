@@ -12,6 +12,7 @@ cc_binary(
         "//solver/impls:fission_naive",
         "//solver/impls:generic_task",
         "//solver/impls:naive",
+        "//solver/impls:delete_strategy",
         "//solver/impls:task_executor_example",
         "//solver/impls:tick_executor_example",
         "//solver/support:careless_controller",

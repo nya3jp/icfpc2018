@@ -106,3 +106,17 @@ cc_library(
         "@com_github_google_glog//:glog",
     ],
 )
+
+cc_library(
+    name = "delete_strategy",
+    srcs = ["deleter2.cc"],
+    hdrs = ["deleter.h"],
+    deps = [
+        ":base",
+        "//solver/data:matrix",
+        "//solver/data:state",
+        "//solver/io:trace_writer",
+        "//solver/support:tick_executor",
+        "@com_github_google_glog//:glog",
+    ],
+)
