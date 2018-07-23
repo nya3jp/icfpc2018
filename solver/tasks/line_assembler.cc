@@ -175,8 +175,7 @@ TaskPtr MakeGreedyMoveTask(int bot_id, Point destination) {
       }
     }
 
-    LOG(WARNING) << "Bot " << bot_id << " stuck: " << position << " -> " << destination;
-    CHECK(++stuck < 40) << "Aborting because stuck for long";
+    CHECK(++stuck < 40) << "Bot " << bot_id << " stuck: " << position << " -> " << destination;
     return false;
   });
 }
@@ -289,7 +288,6 @@ TaskPtr MakeFinishTask() {
 
 TaskPtr MakeScatterToRegionsTask(std::vector<Region> regions) {
   return MakeTask([=](Task::Commander* cmd) -> TaskPtr {
-    LOG(INFO) << "Scatter";
     std::vector<TaskPtr> subtasks;
     for (int index_region = 0; index_region < static_cast<int>(regions.size()); ++index_region) {
       const Region& region = regions[index_region];
@@ -370,7 +368,7 @@ TaskPtr MakeRegionLineAssembleTask(int near_bot_id, int far_bot_id, Region regio
           }
           int far_z = near_z;
           while (far_z < region.maxi.z &&
-                 near_z - far_z + 1 < FAR_LEN &&
+                 far_z - near_z + 1 < FAR_LEN &&
                  TARGET.Get(x, y - 1, far_z + 1)) {
             ++far_z;
           }
