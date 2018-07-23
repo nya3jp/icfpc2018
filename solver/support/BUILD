@@ -47,3 +47,13 @@ cc_library(
         "@com_github_google_glog//:glog",
     ],
 )
+
+cc_library(
+    name = "union_find",
+    srcs = ["union_find.cc"],
+    hdrs = ["union_find.h"],
+    deps = [
+        "//solver/data:geometry",
+        "@com_github_google_glog//:glog",
+    ],
+)

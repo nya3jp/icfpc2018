@@ -14,11 +14,18 @@ class TickExecutor {
  public:
   class Commander {
    public:
+    Commander(const Commander& other) = delete;
+    Commander(Commander&& other);
+    Commander& operator=(Commander&& other);
+
     bool Set(int bot_id, const Command& command);
 
     const FieldState* field() const { return field_; }
     const std::map<int, Command>& commands() const { return commands_; }
     const std::vector<Action> GetAction();
+    std::vector<Region> GetFills() const;
+
+    Commander Copy() const;
 
    protected:
     explicit Commander(const FieldState* field);
@@ -28,9 +35,10 @@ class TickExecutor {
     const std::vector<Region> VolatileCoordinates(int bot_id, const Command& command);
     const Point Operand(int bot_id, const Command& command);
 
-    const FieldState* const field_;
+    const FieldState* field_;
     std::map<int, Command> commands_;
     std::vector<Region> footprints_;
+    std::vector<Region> fills_;
     std::map<Region, std::set<Region> > gfills_;
     std::map<Region, std::set<Region> > gvoids_;
     std::map<std::pair<Region, Region>, int> masters_;
