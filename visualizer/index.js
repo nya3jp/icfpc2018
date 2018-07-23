@@ -173,9 +173,33 @@ function init() {
         tick = nextTick;
     }
 
-    var slider = document.getElementById("slider");
-    slider.setAttribute("max", diffsForward.length - 1);
-    slider.addEventListener("input", changeTickFromSlider);
+    var sliderTick = document.getElementById("sliderTick");
+    var sliderInterval = document.getElementById("sliderInterval");
+    sliderTick.setAttribute("max", diffsForward.length - 1);
+    sliderTick.addEventListener("input", changeTickFromSlider);
+    sliderInterval.addEventListener("input", changeIntervalFromSlider);
+
+    var timer = undefined;
+    function changeIntervalFromSlider(e) {
+        var speed = Number(e.target.value);
+        if (speed == 0) {
+            interval = -1
+        } else {
+            interval = 1000 / speed;
+        }
+        changeInterval(interval);
+    }
+    function changeInterval(interval) {
+        if (timer != undefined) {
+            clearInterval(timer);
+        }
+        if (interval != -1) {
+            timer = window.setInterval(function(){
+                sliderTick.value++;
+                changeTick(sliderTick.value);
+            }, interval);
+        }
+    }
 
     function changeTickFromSlider(e) {
         var i = Number(e.target.value);
