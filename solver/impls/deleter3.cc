@@ -29,10 +29,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
   auto x_size = (end_x_ - start_x_ - 1) / 29 + 2;
   auto y_size = std::min(40 / x_size, (height_ - 1) / 29 + 2);
 
-//  std::cout << "X: " <<  x_size << " Y: " << y_size << std::endl;
-//  std::cout << "x: " <<  start_x_ << " - " << end_x_ << std::endl;
-//  std::cout << "y: " <<  0 << " - " << height_ << std::endl;
-//  std::cout << "z: " <<  start_z_ << " - " << end_z_ << std::endl;
 
 
   if (state_ == State::FISSION) {
@@ -75,11 +71,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
         }
       }
     }
-//    std::cout << "A ";
-//    for (const auto &bot: bots) {
-//      std::cout << bot.second.position().x << " ";
-//    }
-//    std::cout << std::endl;
     // x方向、最後の一個
     for (const auto &bot : bots) {
       if (bot.second.position().x % 29 != start_x_ % 29 &&
@@ -89,11 +80,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
         return;
       }
     }
-//    std::cout << "B ";
-//    for (const auto &bot: bots) {
-//      std::cout << bot.second.position().x << " ";
-//    }
-//    std::cout << std::endl;
 
     // y方向に展開
     if (bots.size() < x_size * y_size) {
@@ -136,7 +122,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
     }
   }
   if (state_ == State::DELETION) {
-//    std::cout << "debug-delete" << std::endl;
 
     auto current_pos = bots.find(0)->second.position();
     int cur_min_y = matrix.Resolution();
@@ -200,7 +185,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
           }
           if (!odd_x && odd_y) {
             delete_even_odd = true;
-//            std::cout << Point(x, y, current_pos.z + dz_) << std::endl;
           }
           if (!odd_x && !odd_y) {
             delete_even_even = true;
@@ -208,8 +192,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
         }
       }
     }
-//    std::cout << delete_odd_odd << " " << delete_odd_even <<
-//    " " << delete_even_odd << " " << delete_even_even << std::endl;
     // 一度に消す領域は一つまで
     if (delete_odd_odd) {
       delete_odd_even = delete_even_odd = delete_even_even = false;
@@ -222,7 +204,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
     }
     // 消去パート
     if (delete_odd_odd || delete_odd_even || delete_even_odd || delete_even_even) {
-//      std::cout << "delete" << std::endl;
       for (const auto &bot : bots) {
         auto x_pos = bot.second.position().x;
         auto y_pos = bot.second.position().y;
@@ -282,12 +263,9 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
         } else {
           commander->Set(bot.second.id(), Command::GVoid(nd, Delta(x_diff, y_diff, 0)));
         }
-//        std::cout << bot.second.position() + nd << " "
-//                  << bot.second.position() + nd + Delta(x_diff, y_diff, 0) << std::endl;
       }
     } else {
       // dz_に進む
-//      std::cout << "dz" << std::endl;
       for (const auto &bot : bots) {
         commander->Set(bot.second.id(), Command::SMove(LinearDelta(Axis::Z, dz_)));
       }
@@ -295,7 +273,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
     return;
   }
   if (state_ == State::ELEVATE) {
-//    std::cout << "debug-elevate" << std::endl;
     int cur_min_y = matrix.Resolution();
     int cur_max_y = 0;
     for (const auto &bot : bots) {
@@ -311,8 +288,13 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
         (dz_ < 0 && cur_min_y % (58 * (y_size - 1)) == 0) ||
         (dz_ > 0 && cur_max_y % (58 * (y_size - 1)) == 0)) {
       for (const auto &bot : bots) {
-        commander->Set(bot.second.id(),
-                       Command::SMove(LinearDelta(Axis::Y, std::min(14, height_ - bot.second.position().y))));
+        if (bot.second.position().y % 29 == 15) {
+          commander->Set(bot.second.id(),
+                         Command::SMove(LinearDelta(Axis::Y, std::min(14, height_ - bot.second.position().y))));
+        } else {
+          commander->Set(bot.second.id(),
+                         Command::SMove(LinearDelta(Axis::Y, std::min(15, height_ - bot.second.position().y))));
+        }
       }
       return;
     } else {
@@ -322,10 +304,8 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
     return;
   }
   if (state_ == State::FUSION) {
-//    std::cout << "debug-fusion" << std::endl;
 
     { // y方向のfusion
-//      std::cout << "debug-f0" << std::endl;
       int cur_min_y = matrix.Resolution();
       int cur_max_y = 0;
       for (const auto &bot : bots) {
@@ -338,9 +318,7 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
           cur_next_y = std::max(cur_next_y, bot.second.position().y);
         }
       }
-//      std::cout << "debug-f1" << std::endl;
       if (bots.size() > x_size) {
-//        std::cout << "debug-f2" << std::endl;
         bool any = false;
         for (const auto &bot : bots) {
           if (bot.second.position().y == cur_max_y) {
@@ -353,7 +331,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
             }
           }
         }
-//        std::cout << "debug-f3" << std::endl;
         if (any) { return; }
         for (const auto &bot : bots) {
           if (bot.second.position().y == cur_max_y) {
@@ -365,7 +342,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
         return;
       }
     }
-//    std::cout << "debug-f4" << std::endl;
     { // x方向のfusion
       int cur_min_x = matrix.Resolution();
       int cur_max_x = 0;
@@ -379,7 +355,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
           cur_next_x = std::max(cur_next_x, bot.second.position().x);
         }
       }
-//      std::cout << "debug-f5" << std::endl;
       if (bots.size() > 1) {
         bool any = false;
         for (const auto &bot : bots) {
@@ -394,7 +369,6 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
           }
         }
         if (any) { return; }
-//        std::cout << "debug-f6" << std::endl;
         for (const auto &bot : bots) {
           if (bot.second.position().x == cur_max_x) {
             commander->Set(bot.second.id(), Command::FusionS(Delta(-1, 0, 0)));
