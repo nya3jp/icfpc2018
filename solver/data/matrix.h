@@ -1,6 +1,7 @@
 #ifndef SOLVER_DATA_MATRIX_H
 #define SOLVER_DATA_MATRIX_H
 
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -45,6 +46,8 @@ class Matrix {
   void Set(int x, int y, int z, bool value);
 
   Matrix Copy() const;
+
+  std::string ToJSON();
 
  private:
   int resolution_;

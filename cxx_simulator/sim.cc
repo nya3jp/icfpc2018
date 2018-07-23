@@ -104,9 +104,10 @@ void CommandIssuer::FromFile(const std::string& path) {
 
 class Simulator {
  public:
-  Simulator(const Matrix* source, const Matrix* target, CommandIssuer* trace)
-    : field_(FieldState::FromModels(source->Copy(), target->Copy())), trace_(trace) {}
+  Simulator(const Matrix* source, const Matrix* target, CommandIssuer* trace, const bool log)
+    : field_(FieldState::FromModels(source->Copy(), target->Copy())), trace_(trace), log_(log) {}
   void ReadCommands(std::ifstream ifs);
+  void LogTick(int tick);
   void Exec();
 
   class DummyWriter : public TraceWriter {
@@ -118,23 +119,45 @@ class Simulator {
   FieldState field_;
   DummyWriter writer_;
   CommandIssuer* trace_;
+  bool log_;
+  std::ofstream log_file_;
 };
+
+void Simulator::LogTick(int tick) {
+    log_file_ << "  {" << std::endl;
+    log_file_ << "    \"field\": " << field_.ToJSON() << std::endl;
+    log_file_ << "  }";
+}
 
 void Simulator::Exec() {
   TickExecutor executor(trace_);
   int tick = 0;
+  if (log_) {
+    log_file_ = std::ofstream("simlog.json");
+    log_file_ << "[" << std::endl;
+    LogTick(tick);
+  }
   while (!field_.IsHalted()) {
     executor.Run(&field_, &writer_);
     ++tick;
+    if (log_) {
+      log_file_ << "," << std::endl;
+      LogTick(tick);
+    }
   }
   CHECK(trace_->IsCommandsEmpty());
   CHECK(field_.matrix() == field_.target());
   std::cout << tick << " " << field_.energy() << std::endl;
+  if (log_) {
+    log_file_ << "]" << std::endl;
+    log_file_.close();
+  }
 }
 
 DEFINE_string(source, "", "Path to source model file");
 DEFINE_string(target, "", "Path to target model file");
 DEFINE_string(trace, "", "Path to input trace file");
+DEFINE_bool(log, false, "Output log file for visualizer");
 
 int main(int argc, char *argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -165,7 +188,7 @@ int main(int argc, char *argv[]) {
   CommandIssuer trace;
   trace.FromFile(FLAGS_trace);
 
-  Simulator simulator(&source, &target, &trace);
+  Simulator simulator(&source, &target, &trace, FLAGS_log);
   simulator.Exec();
 
   return 0;
