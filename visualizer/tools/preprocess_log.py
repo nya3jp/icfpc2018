@@ -62,6 +62,19 @@ def main():
         write_diff(matrix_zero, matrix, True, 0, 1)
         print(file=fp)
 
+        print('scalarStates = [', file=fp)
+        for tick, log_tick in enumerate(log['states']):
+            # tick, energy, harmonics, number of bots
+            t = log_tick['tick']
+            e = log_tick['field']['energy']
+            h = '"Low"' if log_tick['field']['is_harmonics_low'] else '"High"'
+            n = len(log_tick['field']['bots'])
+            s = '  [{:d}, {:d}, {}, {:d}]'.format(t, e, h, n)
+            if tick < len(log['states']) - 1:
+                s += ','
+            print(s, file=fp)
+        print(']\n', file=fp)
+
         print('diffsForward = [', file=fp)
         matrix_last = np.zeros(num_voxels, dtype=np.int8)
         for tick, log_tick in enumerate(log['states']):

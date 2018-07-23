@@ -156,6 +156,9 @@ function init() {
 
     function changeTick(nextTick) {
         console.log("changeTick", tick, "to", nextTick);
+        ss = scalarStates[nextTick]
+        s = "tick: " + ss[0] + ", energy: " + ss[1] + ", harmonics: " + ss[2] + ", #bots: " + ss[3]
+        document.getElementById("scalarState").innerHTML = s;
         if (tick < nextTick) {
             for (var t = tick + 1; t < nextTick; t++) {
                 drawMatrixFromDiffs(diffsForward[t], boxesMatrix);
