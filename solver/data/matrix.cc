@@ -14,10 +14,15 @@ bool Matrix::IsEmpty() const {
   return true;
 }
 
-bool Matrix::IsMovable(const Region& r) const {
+bool Matrix::IsInSpace(const Region& r) const {
   CHECK(0 <= r.mini.x && r.maxi.x < resolution_ &&
         0 <= r.mini.y && r.maxi.y < resolution_ &&
         0 <= r.mini.z && r.maxi.z < resolution_) << r;
+  return true;
+}
+
+bool Matrix::IsMovable(const Region& r) const {
+  IsInSpace(r);
   for (int x = r.mini.x; x <= r.maxi.x; ++x) {
     for (int y = r.mini.y; y <= r.maxi.y; ++y) {
       for (int z = r.mini.z; z <= r.maxi.z; ++z) {

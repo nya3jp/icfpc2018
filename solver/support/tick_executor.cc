@@ -8,16 +8,17 @@ bool TickExecutor::Commander::Set(int bot_id, const Command& command) {
     const Region& nd = vcs[1];
     auto& map = command.type == Command::GFILL ? gfills_ : gvoids_;
     if (map.count(fd) == 0) {
-      if (Interfere(fd)) {
-        return false;
-      }
       if (command.type == Command::GFILL) {
-        // matrix.placeableでなくてもvoidはOK ((0,0,0)や(R-1,R-1,R-1)など)
         if (!field_->matrix().IsPlaceable(fd)) {
           return false;
         }
       } else {
-        //todo なんらかのcheck
+        if (!field_->matrix().IsInSpace(fd)) {
+          return false;
+        }
+      }
+      if (Interfere(fd)) {
+        return false;
       }
       map.insert(std::make_pair(fd, std::set<Region>{nd}));
     } else {
