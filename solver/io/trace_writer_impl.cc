@@ -130,7 +130,7 @@ void TraceWriterImpl::Command(const struct Command& command) {
       Fill(command.nd);
       break;
     case Command::VOID:
-      Fill(command.nd);
+      Void(command.nd);
       break;
     case Command::GFILL:
       Gfill(command.nd, command.fd);
