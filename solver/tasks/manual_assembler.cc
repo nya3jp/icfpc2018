@@ -31,6 +31,8 @@ TaskPtr MakeGreedyMoveTask(int bot_id, Point destination) {
       return true;
     }
 
+    CHECK(++stuck < 100) << "Bot " << bot_id << " stuck: " << position << " -> " << destination;
+
     bool can_detour = !detoured;
     detoured = false;
 
@@ -107,7 +109,6 @@ TaskPtr MakeGreedyMoveTask(int bot_id, Point destination) {
       }
     }
 
-    CHECK(++stuck < 40) << "Bot " << bot_id << " stuck: " << position << " -> " << destination;
     return false;
   });
 }
@@ -184,196 +185,99 @@ TaskPtr MakeFinishTask() {
   });
 }
 
-class LazyFlipMiddlewareTask : public Task {
- public:
-  LazyFlipMiddlewareTask(TaskPtr task)
-      : task_(std::move(task)), GROUND(-999, -999, -999) {
-    union_find_.Add(GROUND);
-  }
-  LazyFlipMiddlewareTask(const LazyFlipMiddlewareTask& other) = delete;
-
-  bool Decide(Commander* cmd) override {
-    if (!holdback_commands_.empty()) {
-      for (const auto& pair : holdback_commands_) {
-        bool success = cmd->Set(pair.first, pair.second);
-        CHECK(success);
-      }
-      holdback_commands_.clear();
-      return holdback_done_;
-    }
-
-    const int any_bot_id = BOTS.begin()->first;
-
-    if (done_deferred_) {
-      CHECK(harmonic_);
-      bool success = cmd->Set(any_bot_id, Command::Flip());
-      CHECK(success);
-      return true;
-    }
-
-    if (harmonic_ && IsGrounded()) {
-      bool success = cmd->Set(any_bot_id, Command::Flip());
-      CHECK(success);
-      harmonic_ = false;
-      return false;
-    }
-
-    Commander copy_cmd = cmd->Copy();
-    bool done = task_->Decide(&copy_cmd);
-
-    UpdateUnionFind(copy_cmd.GetFills());
-
-    if (!harmonic_ && !IsGrounded()) {
-      holdback_commands_ = copy_cmd.commands();
-      holdback_done_ = done;
-      bool success = cmd->Set(any_bot_id, Command::Flip());
-      CHECK(success);
-      harmonic_ = true;
-      return false;
-    }
-
-    std::swap(*cmd, copy_cmd);
-    if (done && harmonic_) {
-      done_deferred_ = true;
-      return false;
-    }
-    return done;
-  }
-
- private:
-  bool IsGrounded() const {
-    return union_find_.CountRoots() == 1;
-  }
-
-  void UpdateUnionFind(const std::vector<Region>& fills) {
-    for (const auto& fill : fills) {
-      for (int x = fill.mini.x; x <= fill.maxi.x; ++x) {
-        for (int y = fill.mini.y; y <= fill.maxi.y; ++y) {
-          for (int z = fill.mini.z; z <= fill.maxi.z; ++z) {
-            const Point p(x, y, z);
-            union_find_.Add(p);
-            union_find_.Connect(p, Point(x - 1, y, z));
-            union_find_.Connect(p, Point(x + 1, y, z));
-            union_find_.Connect(p, Point(x, y - 1, z));
-            union_find_.Connect(p, Point(x, y + 1, z));
-            union_find_.Connect(p, Point(x, y, z - 1));
-            union_find_.Connect(p, Point(x, y, z + 1));
-            if (y == 0) {
-              union_find_.Connect(p, GROUND);
-            }
+TaskPtr MakeRegionFillVoidTask(bool fill, Region region) {
+  return MakeTask([=](Task::Commander* cmd) -> TaskPtr {
+    auto FindEmptyNeighbor = [&](Point p) -> Point {
+      for (auto axis : {Axis::X, Axis::Y, Axis::Z}) {
+        for (int d : {-1, 1}) {
+          Point adj = p + LinearDelta(axis, d).ToDelta();
+          if (!region.Contains(adj) && MATRIX.IsMovable(Region::FromPoint(adj))) {
+            return adj;
           }
         }
       }
+      LOG(FATAL) << "No empty neighbor";
+      return Point();
+    };
+
+    int dim =
+        (region.mini.x != region.maxi.x ? 1 : 0) +
+        (region.mini.y != region.maxi.y ? 1 : 0) +
+        (region.mini.z != region.maxi.z ? 1 : 0);
+    if (dim == 0) {
+      Point p = region.mini;
+      Point adj = FindEmptyNeighbor(p);
+      Command command = Command::Void(p - adj);
+      if (fill) {
+        command.type = Command::FILL;
+      }
+      std::vector<TaskPtr> tasks;
+      for (int bot_id = 1; bot_id < 8; ++bot_id) {
+        const Point& t = BOT(bot_id).position();
+        if (t == p || t == adj) {
+          tasks.emplace_back(MakeGreedyMoveTask(bot_id, Point(bot_id, 0, 0)));
+        }
+      }
+      tasks.emplace_back(MakeSequenceTask(
+          MakeGreedyMoveTask(0, adj),
+          MakeCommandTask(0, command)));
+      return MakeBarrierTask(std::move(tasks));
     }
-  }
 
-  const TaskPtr task_;
-  const Point GROUND;
-  UnionFind union_find_;
-  bool harmonic_ = false;
-  std::map<int, Command> holdback_commands_;
-  bool holdback_done_;
-  bool done_deferred_ = false;
-};
+    std::set<std::pair<Point, Point>> diagonals;
+    for (int xa : {region.mini.x, region.maxi.x}) {
+      int xb = (xa == region.mini.x ? region.maxi.x : region.mini.x);
+      for (int ya : {region.mini.y, region.maxi.y}) {
+        int yb = (ya == region.mini.y ? region.maxi.y : region.mini.y);
+        for (int za : {region.mini.z, region.maxi.z}) {
+          int zb = (za == region.mini.z ? region.maxi.z : region.mini.z);
+          diagonals.insert(std::make_pair(Point(xa, ya, za), Point(xb, yb, zb)));
+        }
+      }
+    }
+    CHECK_EQ(diagonals.size(), 1 << dim);
 
-TaskPtr MakeLazyFlipMiddlewareTask(TaskPtr task) {
-  return MakeTask(new LazyFlipMiddlewareTask(std::move(task)));
-}
-
-TaskPtr MakePointFillTask(Point p) {
-  return MakeSequenceTask(
-      MakeGreedyMoveTask(0, p + Delta(0, 1, 0)),
-      MakeCommandTask(0, Command::Fill(Delta(0, -1, 0))));
-}
-
-TaskPtr MakePointVoidTask(Point p) {
-  return MakeSequenceTask(
-      MakeGreedyMoveTask(0, p + Delta(0, 1, 0)),
-      MakeCommandTask(0, Command::Void(Delta(0, -1, 0))));
-}
-
-TaskPtr MakeGroupFillTask(Region region, std::vector<std::pair<Point, Point>> diagonals) {
-  std::vector<TaskPtr> move_tasks;
-  std::vector<TaskPtr> gfill_tasks;
-  int bot_id = 0;
-  for (const auto& diagonal : diagonals) {
-    Delta adj(diagonal.first.x == region.mini.x ? -1 : 1, 0, 0);
-    move_tasks.emplace_back(MakeGreedyMoveTask(bot_id, diagonal.first + adj));
-    gfill_tasks.emplace_back(MakeCommandTask(bot_id, Command::GFill(Delta() - adj, diagonal.second - diagonal.first)));
-    ++bot_id;
-  }
-  return MakeSequenceTask(MakeBarrierTask(std::move(move_tasks)), MakeBarrierTask(std::move(gfill_tasks)));
-}
-
-TaskPtr MakeGroupVoidTask(Region region, std::vector<std::pair<Point, Point>> diagonals) {
-  std::vector<TaskPtr> move_tasks;
-  std::vector<TaskPtr> gvoid_tasks;
-  int bot_id = 0;
-  for (const auto& diagonal : diagonals) {
-    Delta adj(diagonal.first.x == region.mini.x ? -1 : 1, 0, 0);
-    move_tasks.emplace_back(MakeGreedyMoveTask(bot_id, diagonal.first + adj));
-    gvoid_tasks.emplace_back(MakeCommandTask(bot_id, Command::GVoid(Delta() - adj, diagonal.second - diagonal.first)));
-    ++bot_id;
-  }
-  return MakeSequenceTask(MakeBarrierTask(std::move(move_tasks)), MakeBarrierTask(std::move(gvoid_tasks)));
+    std::vector<TaskPtr> move_tasks;
+    std::vector<TaskPtr> group_tasks;
+    std::set<Point> adjs;
+    int bot_id = 0;
+    for (const auto& diagonal : diagonals) {
+      Point adj = FindEmptyNeighbor(diagonal.first);
+      move_tasks.emplace_back(MakeGreedyMoveTask(bot_id, adj));
+      Command command = Command::GVoid(diagonal.first - adj, diagonal.second - diagonal.first);
+      if (fill) {
+        command.type = Command::GFILL;
+      }
+      group_tasks.emplace_back(MakeCommandTask(bot_id, command));
+      adjs.insert(adj);
+      ++bot_id;
+    }
+    std::vector<TaskPtr> tasks;
+    for (; bot_id < 8; ++bot_id) {
+      Point t = BOT(bot_id).position();
+      if (region.Contains(t) || adjs.count(t) > 0) {
+        tasks.emplace_back(MakeGreedyMoveTask(bot_id, Point(bot_id, 0, 0)));
+      }
+    }
+    tasks.emplace_back(MakeSequenceTask(MakeBarrierTask(std::move(move_tasks)), MakeBarrierTask(std::move(group_tasks))));
+    return MakeBarrierTask(std::move(tasks));
+  });
 }
 
 }  // namespace
 
 TaskPtr Fill(Region region) {
-  int dim =
-      (region.mini.x != region.maxi.x ? 1 : 0) +
-      (region.mini.y != region.maxi.y ? 1 : 0) +
-      (region.mini.z != region.maxi.z ? 1 : 0);
-  if (dim == 0) {
-    return MakePointFillTask(region.mini);
-  }
-
-  std::set<std::pair<Point, Point>> diagonals;
-  for (int xa : {region.mini.x, region.maxi.x}) {
-    int xb = (xa == region.mini.x ? region.maxi.x : region.mini.x);
-    for (int ya : {region.mini.y, region.maxi.y}) {
-      int yb = (ya == region.mini.y ? region.maxi.y : region.mini.y);
-      for (int za : {region.mini.z, region.maxi.z}) {
-        int zb = (za == region.mini.z ? region.maxi.z : region.mini.z);
-        diagonals.insert(std::make_pair(Point(xa, ya, za), Point(xb, yb, zb)));
-      }
-    }
-  }
-  CHECK_EQ(diagonals.size(), 1 << dim);
-
-  return MakeGroupFillTask(region, std::vector<std::pair<Point, Point>>(diagonals.begin(), diagonals.end()));
+  return MakeRegionFillVoidTask(true, region);
 }
 
 TaskPtr Void(Region region) {
-  int dim =
-      (region.mini.x != region.maxi.x ? 1 : 0) +
-      (region.mini.y != region.maxi.y ? 1 : 0) +
-      (region.mini.z != region.maxi.z ? 1 : 0);
-  if (dim == 0) {
-    return MakePointVoidTask(region.mini);
-  }
-
-  std::set<std::pair<Point, Point>> diagonals;
-  for (int xa : {region.mini.x, region.maxi.x}) {
-    int xb = (xa == region.mini.x ? region.maxi.x : region.mini.x);
-    for (int ya : {region.mini.y, region.maxi.y}) {
-      int yb = (ya == region.mini.y ? region.maxi.y : region.mini.y);
-      for (int za : {region.mini.z, region.maxi.z}) {
-        int zb = (za == region.mini.z ? region.maxi.z : region.mini.z);
-        diagonals.insert(std::make_pair(Point(xa, ya, za), Point(xb, yb, zb)));
-      }
-    }
-  }
-  CHECK_EQ(diagonals.size(), 1 << dim);
-
-  return MakeGroupVoidTask(region, std::vector<std::pair<Point, Point>>(diagonals.begin(), diagonals.end()));
+  return MakeRegionFillVoidTask(false, region);
 }
 
 TaskPtr MakeManualAssemblerTask(TaskPtr main_task) {
   return MakeSequenceTask(
       MakeFissionTask(),
-      MakeLazyFlipMiddlewareTask(std::move(main_task)),
+      std::move(main_task),
       MakeFinishTask(),
       MakeCommandTask(0, Command::Halt()));
 }

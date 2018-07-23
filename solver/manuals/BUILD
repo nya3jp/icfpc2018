@@ -3,11 +3,15 @@ package(default_visibility=["//visibility:public"])
 cc_library(
     name = "manuals",
     srcs = [
+        "debug.cc",
         "example.cc",
+        "fa002.cc",
         "index.cc",
     ],
     hdrs = [
+        "debug.h",
         "example.h",
+        "fa002.h",
         "index.h",
     ],
     deps = [

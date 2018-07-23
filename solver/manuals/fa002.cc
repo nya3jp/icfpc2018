@@ -1,13 +1,9 @@
-#include "solver/manuals/example.h"
+#include "solver/manuals/fa002.h"
 
 #include "solver/manuals/debug.h"
 #include "solver/tasks/manual_assembler.h"
 
-namespace {
-
-}  // namespace
-
-TaskPtr MakeManualExampleTask() {
+TaskPtr MakeManualFA002Task() {
   return MakeSequenceTask(
       // FA002
       Fill(Region(Point(8, 0, 7), Point(10, 0, 7))),
