@@ -120,6 +120,14 @@ TaskPtr MakeFissionTask(Region& bb_) {
         } else if (i < 4 && bb_.maxi.y > bb_.mini.y && bot_ids[i + 4] < 0) {
           bool success = commander->Set(bot_id, Command::Fission(Delta(0, 1, 0), 0));
           CHECK(success);
+        } else {
+          // slight optimization: fill corners to avoid +3 penalty
+          int dx = bot.position().x == bb_.mini.x - 1 ? 1 : -1;
+          int dz = bot.position().z == bb_.mini.z - 1 ? 1 : -1;
+          if (!commander->field()->matrix().Get(bot.position().x + dx, bot.position().y, bot.position().z + dz)) {
+            bool success = commander->Set(bot_id, Command::Fill(Delta(dx, 0, dz)));
+            CHECK(success);
+          }
         }
       }
     }
