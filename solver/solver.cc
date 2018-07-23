@@ -14,6 +14,7 @@
 #include "solver/impls/bbgvoid_task.h"
 #include "solver/impls/deleter.h"
 #include "solver/impls/deleter3.h"
+#include "solver/impls/fa.h"
 #include "solver/impls/fission_naive.h"
 #include "solver/impls/generic_task.h"
 #include "solver/impls/naive.h"
@@ -59,6 +60,9 @@ std::unique_ptr<Solver> CreateSolver(
   }
   if (name == "delete3") {
     return std::unique_ptr<Solver>(new DeleteStrategySolver3(source, target, writer));
+  }
+  if (name == "fa015") {
+    return std::unique_ptr<Solver>(new FASolver(source, target, writer, true, 15));
   }
   if (name == "reassemble_naive") {
     return std::unique_ptr<Solver>(new ReassembleNaiveSolver(source, target, writer, FLAGS_disasm, FLAGS_asm));

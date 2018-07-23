@@ -153,3 +153,17 @@ cc_library(
         "@com_github_google_glog//:glog",
     ],
 )
+
+cc_library(
+    name = "fa",
+    srcs = ["fa.cc"],
+    hdrs = ["fa.h"],
+    deps = [
+        ":base",
+        "//solver/data:matrix",
+        "//solver/data:state",
+        "//solver/io:trace_writer",
+        "//solver/support:tick_executor",
+        "@com_github_google_glog//:glog",
+    ],
+)
