@@ -4,9 +4,9 @@ cd "$(dirname "$0")/.."
 
 bazel build ...
 
-for x in `seq 1 5`; do
-    for z in `seq 1 5`; do
-        if [ $x = 5 -a $z = 5 ]; then
+for x in `seq 1 8`; do
+    for z in `seq 1 8`; do
+        if [ `expr $x \* $z` -gt 20 ]; then
             continue
         fi
 
