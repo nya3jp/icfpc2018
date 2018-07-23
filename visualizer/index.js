@@ -10,16 +10,16 @@
 
 window.addEventListener('DOMContentLoaded', init);
 
-const box_size = 8 / resolution;
-const grid_size = 10 / resolution;
-const geometry_box = new THREE.BoxGeometry(box_size, box_size, box_size);
+const boxSize = 8 / resolution;
+const gridSize = 10 / resolution;
+const geometryBox = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
 
-function generate_box(xi, yi, zi) {
-    const material_box = new THREE.MeshStandardMaterial({color: 0xffff00});
-    const box = new THREE.Mesh(geometry_box, material_box);
-    x = xi * grid_size;
-    y = yi * grid_size;
-    z = zi * grid_size;
+function generateBox(xi, yi, zi) {
+    const materialBox = new THREE.MeshStandardMaterial({color: 0xffff00});
+    const box = new THREE.Mesh(geometryBox, materialBox);
+    x = xi * gridSize;
+    y = yi * gridSize;
+    z = zi * gridSize;
     box.castShadow = true;
     box.receiveShadow = true;
     box.position.set(x, y, z);
@@ -37,24 +37,24 @@ function c2g(xi, yi, zi) {
     return xi * resolution * resolution + yi * resolution + zi;
 }
 
-function generate_scene(width, height, renderer) {
+function generateScene(width, height, renderer) {
     const scene = new THREE.Scene();
 
     // Draw grid lines.
-    var material_line = new THREE.LineBasicMaterial({
+    var materialLine = new THREE.LineBasicMaterial({
         color: 0xffffff,
         transparent: true,
         opacity: 0.2
     });
-    start = - grid_size / 2;
-    end = resolution * grid_size - grid_size / 2;
-    function add_line(x0, y0, z0, x1, y1, z1) {
-        var geometry_line = new THREE.Geometry();
-        geometry_line.vertices.push(
+    start = - gridSize / 2;
+    end = resolution * gridSize - gridSize / 2;
+    function addLine(x0, y0, z0, x1, y1, z1) {
+        var geometryLine = new THREE.Geometry();
+        geometryLine.vertices.push(
             new THREE.Vector3(x0, y0, z0),
             new THREE.Vector3(x1, y1, z1)
         );
-        var line = new THREE.Line(geometry_line, material_line);
+        var line = new THREE.Line(geometryLine, materialLine);
         scene.add(line);
     }
     if (true) {  // Line drawing is heavy in large resolution.
@@ -64,11 +64,11 @@ function generate_scene(width, height, renderer) {
     }
     for (var i = 0; i <= resolution; i += stride) {
         for (var j = 0; j <= resolution; j += stride) {
-            ci = (i - 0.5) * grid_size;
-            cj = (j - 0.5) * grid_size;
-            add_line(start, ci, cj, end, ci, cj);
-            add_line(ci, start, cj, ci, end, cj);
-            add_line(ci, cj, start, ci, cj, end);
+            ci = (i - 0.5) * gridSize;
+            cj = (j - 0.5) * gridSize;
+            addLine(start, ci, cj, end, ci, cj);
+            addLine(ci, start, cj, ci, end, cj);
+            addLine(ci, cj, start, ci, cj, end);
         }
     }
 
@@ -101,49 +101,61 @@ function init() {
     document.body.appendChild(renderer.domElement);
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-    var scene = generate_scene(width, height, renderer);
+    var scene = generateScene(width, height, renderer);
     var boxes = Array(resolution * resolution * resolution);
-    console.log(scene)
+    console.log(scene);
+    var tick = -1;
 
-    function changeFrame(i) {
-        for (var j = 0; j < simlog[i].length; j++) {
-            visual = simlog[i][j][0];
-            color = simlog[i][j][1];
-            if (visual == 'visible' & boxes[j] == undefined) {
-                coord_index = g2c(j);
-                box = generate_box(coord_index[0],
-                                   coord_index[1],
-                                   coord_index[2]);
-                boxes[j] = box;
+    function drawTick(diffs) {
+        for (var j = 0; j < diffs.length; j++) {
+            index = diffs[j][0];
+            visual = diffs[j][1];
+            color = diffs[j][2];
+            if (visual & boxes[index] == undefined) {
+                coord_index = g2c(index);
+                box = generateBox(coord_index[0],
+                                  coord_index[1],
+                                  coord_index[2]);
+                boxes[index] = box;
                 scene.add(box);
             }
-            if (visual == 'visible') {
-                boxes[j].visible = true;
-                boxes[j].material.color.setHex(color);
-            } else if (visual == 'invisible') {
-                boxes[j].visible = false;
-            } else if (visual == 'dispose') {
-                boxes[j].material.dispose();
-                scene.remove(boxes[j]);
-                boxes[j] = undefined;
+            if (visual) {
+                boxes[index].material.color.setHex(color);
+            } else {
+                scene.remove(boxes[index]);
+                boxes[index] = undefined;
             }
         }
     }
 
-    var slider = document.getElementById("slider");
-    slider.setAttribute("max", simlog.length - 1);
-    slider.addEventListener("input", changeFrameFromSlider);
-
-    function changeFrameFromSlider(e){
-        var i = e.target.value;
-        changeFrame(i);
+    function changeTick(next_tick) {
+        console.log("changeTick", tick, "to", next_tick);
+        if (tick < next_tick) {
+            for (var t = tick + 1; t < next_tick; t++) {
+                drawTick(diffsForward[t]);
+            }
+        } else if (tick > next_tick) {
+            for (var t = tick - 1; t >= next_tick; t--) {
+                drawTick(diffsBackward[t]);
+            }
+        }
+        tick = next_tick;
     }
 
-    changeFrame(0);
-    tick();
+    var slider = document.getElementById("slider");
+    slider.setAttribute("max", diffsForward.length - 1);
+    slider.addEventListener("input", changeTickFromSlider);
 
-    function tick() {
+    function changeTickFromSlider(e) {
+        var i = Number(e.target.value);
+        changeTick(i);
+    }
+
+    changeTick(0);
+    show();
+
+    function show() {
         renderer.render(scene, camera);
-        requestAnimationFrame(tick);
+        requestAnimationFrame(show);
     }
 }

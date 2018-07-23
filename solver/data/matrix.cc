@@ -62,6 +62,29 @@ Matrix Matrix::Copy() const {
   return Matrix(resolution_, data_);
 }
 
+std::string Matrix::ToJSON() {
+  std::string s = "[";
+  std::string sep = ",";
+  int last = data_[0];
+  int last_count = 0;
+  for (int i = 0; i < static_cast<int>(data_.size()); ++i) { // TODO: auto
+    int current = data_[i];
+    if (current == last) {
+      last_count++;
+    } else {
+      s += std::to_string(last) + sep + std::to_string(last_count) + sep;
+      last = current;
+      last_count = 1;
+    }
+  }
+  if (last_count != 0) {
+    s += std::to_string(last) + sep + std::to_string(last_count) + sep;
+  }
+  s.pop_back();
+  s += "]";
+  return s;
+}
+
 bool Matrix::operator==(const Matrix& other) const {
   return resolution_ == other.resolution_ && data_ == other.data_;
 }

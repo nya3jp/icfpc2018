@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include <map>
+#include <string>
 #include <utility>
 
 #include "solver/data/geometry.h"
@@ -80,6 +81,8 @@ class FieldState {
 
   bool IsHarmonicsLow() const { return harmonics_ == Harmonics::LOW; }
   void FlipHarmonics() { harmonics_ = harmonics_ == Harmonics::LOW ? Harmonics::HIGH : Harmonics::LOW; }
+
+  std::string ToJSON() { return matrix_.ToJSON(); }
 
  private:
   uint64_t energy_;
