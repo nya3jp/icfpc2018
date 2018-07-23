@@ -3,13 +3,9 @@
 bool TickExecutor::Commander::Set(int bot_id, const Command& command) {
   const std::vector<Region> vcs = VolatileCoordinates(bot_id, command);
   if (command.type == Command::GFILL || command.type == Command::GVOID) {
-    CHECK(vcs.size() == 3);
-    const Region& current = vcs[0];
+    CHECK(vcs.size() == 2);
+    const Region& fd = vcs[0];
     const Region& nd = vcs[1];
-    const Region& fd = vcs[2];
-    if (Interfere(current)) {
-      return false;
-    }
     auto& map = command.type == Command::GFILL ? gfills_ : gvoids_;
     if (map.count(fd) == 0) {
       if (Interfere(fd)) {
@@ -23,12 +19,9 @@ bool TickExecutor::Commander::Set(int bot_id, const Command& command) {
       map[fd].insert(nd);
     }
   } else if (command.type == Command::FUSION_MASTER || command.type == Command::FUSION_SLAVE) {
-    CHECK(vcs.size() == 2);
-    const Region& current = vcs[0];
-    const Region& nd = vcs[1];
-    if (Interfere(current)) {
-      return false;
-    }
+    CHECK(vcs.size() == 1);
+    const auto& current = Region::FromPoint(field_->bots().at(bot_id).position());
+    const Region& nd = vcs[0];
     auto regions = command.type == Command::FUSION_MASTER ? std::make_pair(current, nd) : std::make_pair(nd, current);
     auto pair = std::make_pair(regions, bot_id);
     if (command.type == Command::FUSION_MASTER) {
@@ -44,12 +37,12 @@ bool TickExecutor::Commander::Set(int bot_id, const Command& command) {
         }
       }
     } else if (command.type == Command::FILL || command.type == Command::VOID) {
-      const Region& nd = vcs[1];
+      const Region& nd = vcs[0];
       if (!field_->matrix().IsPlaceable(nd)) {
         return false;
       }
     } else if (command.type == Command::FISSION) {
-      const Region& nd = vcs[1];
+      const Region& nd = vcs[0];
       if (!field_->matrix().IsMovable(nd)) {
         return false;
       }
@@ -70,6 +63,7 @@ TickExecutor::Commander::Commander(const FieldState* field)
     : field_(field) {
   for (const auto& pair : field->bots()) {
     commands_[pair.first];  // Init with WAIT command.
+    footprints_.push_back(Region::FromPoint(pair.second.position()));
   }
 }
 
@@ -92,36 +86,47 @@ const std::vector<Region> TickExecutor::Commander::VolatileCoordinates(int bot_i
     case Command::HALT:
     case Command::WAIT:
     case Command::FLIP:
-      return {Region::FromPoint(current)};
+      return {};
 
     case Command::LMOVE:
       {
-        const LinearDelta& sld1 = command.ld1;
+        LinearDelta sld1_neighbor = command.ld1;
+        LinearDelta sld1 = command.ld1;
         LinearDelta sld2_neighbor = command.ld2;
         LinearDelta sld2 = command.ld2;
+        sld1_neighbor.delta /= std::abs(sld1_neighbor.delta);
+        sld1.delta -= sld1_neighbor.delta;
         sld2_neighbor.delta /= std::abs(sld2_neighbor.delta);
         sld2.delta -= sld2_neighbor.delta;
 
-        Point next = current + sld1.ToDelta() + sld2_neighbor.ToDelta();
-        return {Region::FromPointDelta(current, sld1.ToDelta()),
-                Region::FromPointDelta(next, sld2.ToDelta())};
+        Point seg1 = current + sld1_neighbor.ToDelta();
+        Point seg2 = current + command.ld1.ToDelta() + sld2_neighbor.ToDelta();
+        return {Region::FromPointDelta(seg1, sld1.ToDelta()),
+                Region::FromPointDelta(seg2, sld2.ToDelta())};
       }
 
     case Command::SMOVE:
-      return {Region::FromPointDelta(current, command.ld1.ToDelta())};
+      {
+        LinearDelta lld_neighbor = command.ld1;
+        LinearDelta lld = command.ld1;
+        lld_neighbor.delta /= std::abs(lld_neighbor.delta);
+        lld.delta -= lld_neighbor.delta;
+        Point seg = current + lld_neighbor.ToDelta();
+        return {Region::FromPointDelta(seg, lld.ToDelta())};
+      }
 
     case Command::FILL:
     case Command::VOID:
     case Command::FISSION:
     case Command::FUSION_MASTER:
     case Command::FUSION_SLAVE:
-      return {Region::FromPoint(current), Region::FromPoint(current + command.nd)};
+      return {Region::FromPoint(current + command.nd)};
 
     case Command::GFILL:
     case Command::GVOID:
       {
         Point next = current + command.nd;
-        return {Region::FromPoint(current), Region::FromPoint(next), Region::FromPointDelta(next, command.fd)};
+        return {Region::FromPointDelta(next, command.fd), Region::FromPoint(next)};
       }
   }
 }
