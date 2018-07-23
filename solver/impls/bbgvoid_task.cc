@@ -12,6 +12,7 @@ TaskPtr MakeFreeMoveTask(int bot_id, Point destination) {
   return MakeTask([=](Task::Commander* commander) -> bool {
     const Point position = commander->field()->bots().find(bot_id)->second.position();
     const Delta delta = destination - position;
+    CHECK(position != destination);
 
     if (delta.dy != 0 && std::abs(delta.dy) > SHORT_LEN) {
       auto move = LinearDelta(Axis::Y, std::max(std::min(delta.dy, LONG_LEN), -LONG_LEN));
@@ -33,11 +34,11 @@ TaskPtr MakeFreeMoveTask(int bot_id, Point destination) {
     }
 
     std::vector<LinearDelta> linears;
-    if (delta.dx != 0) {
-      linears.emplace_back(Axis::X, delta.dx);
-    }
     if (delta.dy != 0) {
       linears.emplace_back(Axis::Y, delta.dy);
+    }
+    if (delta.dx != 0) {
+      linears.emplace_back(Axis::X, delta.dx);
     }
     if (delta.dz != 0) {
       linears.emplace_back(Axis::Z, delta.dz);
@@ -46,7 +47,7 @@ TaskPtr MakeFreeMoveTask(int bot_id, Point destination) {
     if (linears.size() == 1) {
       bool success = commander->Set(bot_id, Command::SMove(linears[0]));
       CHECK(success);
-    } else if (linears.size() > 2) {
+    } else {
       bool success = commander->Set(bot_id, Command::LMove(linears[0], linears[1]));
       CHECK(success);
     }
@@ -293,6 +294,8 @@ Region BBGvoidTaskSolver::CalculateBB() {
       }
     }
   }
+  // optimization: cut master's moving cost (ticks)
+  min_x = 1, min_y = 0, min_z = 1;
   CHECK(max_x != min_x && max_y != min_y && max_z != min_z) << "too thin, cannot solve by BBGvoid";
   CHECK(max_x - min_x <= FAR_LEN && max_y - min_y <= FAR_LEN && max_z - min_z <= FAR_LEN) << "too large, cannot solve by BBGvoid";
   return Region(Point(min_x, min_y, min_z), Point(max_x, max_y, max_z));
