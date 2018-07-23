@@ -19,6 +19,7 @@ cc_library(
         ":command",
         "//solver/data:command",
         "//solver/support:task",
+        "@com_github_gflags_gflags//:gflags",
         "@com_github_google_glog//:glog",
     ],
 )

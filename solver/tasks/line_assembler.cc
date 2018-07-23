@@ -5,6 +5,7 @@
 #include <set>
 
 #include "glog/logging.h"
+#include "gflags/gflags.h"
 
 #include "solver/tasks/command.h"
 
@@ -13,6 +14,10 @@
 #define TARGET (FIELD.target())
 #define BOTS (FIELD.bots())
 #define BOT(bot_id) (BOTS.find(bot_id)->second)
+
+DEFINE_bool(line_assembler_noflip, false, "Disable Flip");
+DEFINE_int32(line_assembler_x_divs, 5, "X division");
+DEFINE_int32(line_assembler_z_divs, 4, "Z division");
 
 namespace {
 
@@ -46,15 +51,15 @@ Region GetBoundingBox(const Matrix& matrix) {
 }
 
 std::vector<Region> ComputeRegions(Task::Commander* cmd) {
-  constexpr int X_DIVS = 5;
-  constexpr int Z_DIVS = 4;
   constexpr int MIN_WIDTH = 2;
+  int x_divs = FLAGS_line_assembler_x_divs;
+  int z_divs = FLAGS_line_assembler_z_divs;
 
   const int resolution = TARGET.Resolution();
   Region bound = GetBoundingBox(TARGET);
 
   // Extend bounding to afford regions.
-  while (bound.maxi.x - bound.mini.x < MIN_WIDTH * X_DIVS) {
+  while (bound.maxi.x - bound.mini.x < MIN_WIDTH * x_divs) {
     if (bound.mini.x > 0) {
       --bound.mini.x;
     } else if (bound.maxi.x < resolution - 1) {
@@ -63,7 +68,7 @@ std::vector<Region> ComputeRegions(Task::Commander* cmd) {
       LOG(FATAL) << "Resolution is too small";
     }
   }
-  while (bound.maxi.z - bound.mini.z < MIN_WIDTH * Z_DIVS) {
+  while (bound.maxi.z - bound.mini.z < MIN_WIDTH * z_divs) {
     if (bound.mini.z > 0) {
       --bound.mini.z;
     } else if (bound.maxi.z < resolution - 1) {
@@ -74,15 +79,15 @@ std::vector<Region> ComputeRegions(Task::Commander* cmd) {
   }
 
   std::vector<Region> regions;
-  for (int ix = 0; ix < X_DIVS; ++ix) {
-    for (int iz = 0; iz < Z_DIVS; ++iz) {
+  for (int ix = 0; ix < x_divs; ++ix) {
+    for (int iz = 0; iz < z_divs; ++iz) {
       regions.emplace_back(
-          Point(bound.mini.x + (bound.maxi.x - bound.mini.x + 1) * ix / X_DIVS,
+          Point(bound.mini.x + (bound.maxi.x - bound.mini.x + 1) * ix / x_divs,
                 0,
-                bound.mini.z + (bound.maxi.z - bound.mini.z + 1) * iz / Z_DIVS),
-          Point(bound.mini.x + (bound.maxi.x - bound.mini.x + 1) * (ix + 1) / X_DIVS - 1,
+                bound.mini.z + (bound.maxi.z - bound.mini.z + 1) * iz / z_divs),
+          Point(bound.mini.x + (bound.maxi.x - bound.mini.x + 1) * (ix + 1) / x_divs - 1,
                 resolution - 1,
-                bound.mini.z + (bound.maxi.z - bound.mini.z + 1) * (iz + 1) / Z_DIVS - 1));
+                bound.mini.z + (bound.maxi.z - bound.mini.z + 1) * (iz + 1) / z_divs - 1));
     }
   }
 
@@ -196,6 +201,19 @@ TaskPtr MakeLinearFissionTask(int bot_id) {
 }
 
 TaskPtr MakeFissionTask() {
+  int num_bots = FLAGS_line_assembler_x_divs * FLAGS_line_assembler_z_divs * 2;
+  CHECK_LE(num_bots, 40);
+  if (num_bots == 2) {
+    return MakeCommandTask(0, Command::Fission(Delta(0, 0, 1), 0));
+  }
+  if (num_bots == 4) {
+    return MakeSequenceTask(
+      MakeCommandTask(0, Command::Fission(Delta(0, 0, 1), 1)),  // 0: [1, 40) -> 1
+      MakeBarrierTask(
+          MakeCommandTask(0, Command::Fission(Delta(0, 1, 0), 0)),   // 0: [3, 40) -> 21
+          MakeCommandTask(1, Command::Fission(Delta(0, 1, 0), 0))));  // 1: [2, 3) -> 2
+  }
+  CHECK_EQ(num_bots, 40);
   return MakeSequenceTask(
       MakeCommandTask(0, Command::Fission(Delta(0, 0, 1), 19)),  // 0: [1, 40) -> 1
       MakeBarrierTask(
@@ -412,9 +430,9 @@ TaskPtr MakeLineAssemblerTask() {
     return MakeSequenceTask(
         MakeFissionTask(),
         MakeScatterToRegionsTask(regions),
-        MakeCommandTask(0, Command::Flip()),
+        FLAGS_line_assembler_noflip ? nullptr : MakeCommandTask(0, Command::Flip()),
         MakeParallelLineAssembleTask(regions),
-        MakeCommandTask(0, Command::Flip()),
+        FLAGS_line_assembler_noflip ? nullptr : MakeCommandTask(0, Command::Flip()),
         MakeFinishTask(),
         MakeCommandTask(0, Command::Halt()));
   });
