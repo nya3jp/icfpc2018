@@ -5,7 +5,7 @@
 TaskPtr MakePrintTask() {
 
   // Uncomment this to debug
-  return nullptr;
+  //return nullptr;
 
   return MakeTask([](Task::Commander* cmd) -> bool {
     const Matrix& matrix = cmd->field()->matrix();

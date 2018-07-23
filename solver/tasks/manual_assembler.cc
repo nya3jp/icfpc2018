@@ -188,8 +188,8 @@ TaskPtr MakeFinishTask() {
 TaskPtr MakeRegionFillVoidTask(bool fill, Region region) {
   return MakeTask([=](Task::Commander* cmd) -> TaskPtr {
     auto FindEmptyNeighbor = [&](Point p) -> Point {
-      for (auto axis : {Axis::X, Axis::Y, Axis::Z}) {
-        for (int d : {-1, 1}) {
+      for (auto axis : {Axis::Y, Axis::X, Axis::Z}) {
+        for (int d : {1, -1}) {
           Point adj = p + LinearDelta(axis, d).ToDelta();
           if (!region.Contains(adj) && MATRIX.IsMovable(Region::FromPoint(adj))) {
             return adj;
