@@ -16,6 +16,7 @@
 #define BOTS (FIELD.bots())
 #define BOT(bot_id) (BOTS.find(bot_id)->second)
 
+DEFINE_bool(line_assembler_flip_xz, false, "Scan by X axis");
 DEFINE_int32(line_assembler_x_divs, 5, "X division");
 DEFINE_int32(line_assembler_z_divs, 4, "Z division");
 
@@ -375,27 +376,53 @@ TaskPtr MakeRegionLineAssembleTask(int near_bot_id, int far_bot_id, Region regio
     };
 
     for (int y = 1; y < resolution; ++y) {
-      for (int x = region.mini.x; x <= region.maxi.x; ++x) {
-        int near_z = region.mini.z;
-        while (near_z <= region.maxi.z) {
-          while (near_z <= region.maxi.z && !TARGET.Get(x, y - 1, near_z)) {
-            ++near_z;
+      if (FLAGS_line_assembler_flip_xz) {
+        for (int z = region.mini.z; z <= region.maxi.z; ++z) {
+          int near_x = region.mini.x;
+          while (near_x <= region.maxi.x) {
+            while (near_x <= region.maxi.x && !TARGET.Get(near_x, y - 1, z)) {
+              ++near_x;
+            }
+            if (near_x > region.maxi.x) {
+              continue;
+            }
+            int far_x = near_x;
+            while (far_x < region.maxi.x &&
+                   far_x - near_x + 1 < FAR_LEN &&
+                   TARGET.Get(far_x + 1, y - 1, z)) {
+              ++far_x;
+            }
+            if (near_x == far_x) {
+              DoPointFill(Point(near_x, y, z));
+            } else {
+              DoLineFill(Point(near_x, y, z), Point(far_x, y, z));
+            }
+            near_x = far_x + 1;
           }
-          if (near_z > region.maxi.z) {
-            continue;
+        }
+      } else {
+        for (int x = region.mini.x; x <= region.maxi.x; ++x) {
+          int near_z = region.mini.z;
+          while (near_z <= region.maxi.z) {
+            while (near_z <= region.maxi.z && !TARGET.Get(x, y - 1, near_z)) {
+              ++near_z;
+            }
+            if (near_z > region.maxi.z) {
+              continue;
+            }
+            int far_z = near_z;
+            while (far_z < region.maxi.z &&
+                   far_z - near_z + 1 < FAR_LEN &&
+                   TARGET.Get(x, y - 1, far_z + 1)) {
+              ++far_z;
+            }
+            if (near_z == far_z) {
+              DoPointFill(Point(x, y, near_z));
+            } else {
+              DoLineFill(Point(x, y, near_z), Point(x, y, far_z));
+            }
+            near_z = far_z + 1;
           }
-          int far_z = near_z;
-          while (far_z < region.maxi.z &&
-                 far_z - near_z + 1 < FAR_LEN &&
-                 TARGET.Get(x, y - 1, far_z + 1)) {
-            ++far_z;
-          }
-          if (near_z == far_z) {
-            DoPointFill(Point(x, y, near_z));
-          } else {
-            DoLineFill(Point(x, y, near_z), Point(x, y, far_z));
-          }
-          near_z = far_z + 1;
         }
       }
     }
