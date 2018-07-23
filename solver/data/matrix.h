@@ -41,6 +41,7 @@ class Matrix {
   bool IsInSpace(const Region& r) const;
   bool IsMovable(const Region& r) const;
   bool IsPlaceable(const Region& r) const;
+  bool Contains(const Point& p) const;
   bool Get(int x, int y, int z) const;
   int Resolution() const { return resolution_; }
 

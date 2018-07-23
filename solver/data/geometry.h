@@ -52,6 +52,28 @@ struct Delta {
     return !IsZero() && Chessboard() <= FAR_LEN;
   }
 
+  inline Delta& operator+=(const Delta& o) {
+    dx += o.dx;
+    dy += o.dy;
+    dz += o.dz;
+    return *this;
+  }
+
+  inline Delta& operator-=(const Delta& o) {
+    dx -= o.dx;
+    dy -= o.dy;
+    dz -= o.dz;
+    return *this;
+  }
+
+  inline Delta operator+(const Delta& o) const {
+    return Delta(*this) += o;
+  }
+
+  inline Delta operator-(const Delta& o) const {
+    return Delta(*this) -= o;
+  }
+
   inline bool operator==(const Delta& o) const {
     return dx == o.dx && dy == o.dy && dz == o.dz;
   }

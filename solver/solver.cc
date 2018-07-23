@@ -1,4 +1,5 @@
 #include <fstream>
+#include <ios>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -83,6 +84,7 @@ int main(int argc, char** argv) {
   }
 
   std::ofstream fout(FLAGS_output.c_str());
+  fout << std::unitbuf;
   TraceWriterImpl writer(fout);
 
   auto solver = CreateSolver(FLAGS_impl, &source, &target, &writer);

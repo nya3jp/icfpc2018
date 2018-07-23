@@ -1,5 +1,7 @@
 #include "solver/support/task.h"
 
+#include <algorithm>
+
 #include "glog/logging.h"
 
 namespace {
@@ -17,9 +19,7 @@ class SequenceTask : public Task {
 };
 
 bool SequenceTask::Decide(Commander* commander) {
-  if (index_ >= tasks_.size()) {
-    LOG(ERROR) << "Task exhausted";
-  } else {
+  if (index_ < tasks_.size()) {
     bool done = tasks_[index_]->Decide(commander);
     if (done) {
       ++index_;
@@ -87,6 +87,13 @@ class LazyFunctionTask : public Task {
   TaskPtr task_;
 };
 
+std::vector<TaskPtr> FilterNullTasks(std::vector<TaskPtr> tasks) {
+  auto iter = std::remove_if(
+      tasks.begin(), tasks.end(), [](const TaskPtr& task) -> bool { return !task; });
+  tasks.erase(iter, tasks.end());
+  return tasks;
+}
+
 }  // namespace
 
 TaskPtr MakeTask(TaskPtr task) {
@@ -106,9 +113,9 @@ TaskPtr MakeTask(std::function<TaskPtr(TickExecutor::Commander*)> func) {
 }
 
 TaskPtr MakeSequenceTask(std::vector<TaskPtr> subtasks) {
-  return TaskPtr(new SequenceTask(std::move(subtasks)));
+  return TaskPtr(new SequenceTask(FilterNullTasks(std::move(subtasks))));
 }
 
 TaskPtr MakeBarrierTask(std::vector<TaskPtr> subtasks) {
-  return TaskPtr(new BarrierTask(std::move(subtasks)));
+  return TaskPtr(new BarrierTask(FilterNullTasks(std::move(subtasks))));
 }

@@ -42,6 +42,12 @@ bool Matrix::IsPlaceable(const Region& r) const {
   return true;
 }
 
+bool Matrix::Contains(const Point& p) const {
+  return (0 <= p.x && p.x < resolution_ &&
+          0 <= p.y && p.y < resolution_ &&
+          0 <= p.z && p.z < resolution_);
+}
+
 bool Matrix::Get(int x, int y, int z) const {
   CHECK(0 <= x && x < resolution_ &&
         0 <= y && y < resolution_ &&

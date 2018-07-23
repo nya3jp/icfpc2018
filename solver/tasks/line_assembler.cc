@@ -15,6 +15,14 @@
 
 namespace {
 
+inline int CapAbs(int delta, int cap) {
+  return std::max(std::min(delta, cap), -cap);
+}
+
+inline int Sign(int delta) {
+  return delta == 0 ? 0 : delta > 0 ? 1 : -1;
+}
+
 Region GetBoundingBox(const Matrix& matrix) {
   int resolution = matrix.Resolution();
   Point mini(resolution, resolution, resolution);
@@ -81,12 +89,19 @@ std::vector<Region> ComputeRegions(Task::Commander* cmd) {
 }
 
 TaskPtr MakeGreedyMoveTask(int bot_id, Point destination) {
-  return MakeTask([=](Task::Commander* cmd) -> bool {
-    Delta delta = destination - BOT(bot_id).position();
+  int stuck = 0;
+  bool detoured = false;
+  return MakeTask([=](Task::Commander* cmd) mutable -> bool {
+    Point position = BOT(bot_id).position();
+    Delta delta = destination - position;
     if (delta.IsZero()) {
       return true;
     }
 
+    bool can_detour = !detoured;
+    detoured = false;
+
+    //LOG(INFO) << "Bot " << bot_id << ": " << position << " -> " << destination;
     std::vector<LinearDelta> linears;
     if (delta.dx != 0) {
       linears.emplace_back(Axis::X, delta.dx);
@@ -103,6 +118,7 @@ TaskPtr MakeGreedyMoveTask(int bot_id, Point destination) {
     if (linears.size() == 2 &&
         std::max(std::abs(linears[0].delta), std::abs(linears[1].delta)) <= SHORT_LEN) {
       if (cmd->Set(bot_id, Command::LMove(linears[0], linears[1]))) {
+        //LOG(INFO) << ">>> LMove " << linears[0] << " " << linears[1];
         return true;
       }
     }
@@ -115,12 +131,51 @@ TaskPtr MakeGreedyMoveTask(int bot_id, Point destination) {
         if (std::abs(component) < cap) {
           continue;
         }
-        LinearDelta move{axis, std::max(std::min(component, cap), -cap)};
+        LinearDelta move{axis, CapAbs(component, cap)};
         if (cmd->Set(bot_id, Command::SMove(move))) {
+          //LOG(INFO) << ">>> SMove " << move;
           return linears.size() == 1 && std::abs(component) == cap;
         }
       }
     }
+
+    if (!can_detour) {
+      return false;
+    }
+
+    // Try detours
+    for (auto detour_axis : {Axis::Y, Axis::Z, Axis::X}) {
+      if (delta.GetAxis(detour_axis) != 0) {
+        continue;
+      }
+      for (int detour_len = 1; detour_len <= SHORT_LEN; ++detour_len) {
+        for (int detour_delta : {detour_len, -detour_len}) {
+          LinearDelta detour{detour_axis, detour_delta};
+          Point corner = position + detour.ToDelta();
+          if (!TARGET.Contains(corner)) {
+            continue;
+          }
+          for (Axis forward_axis : {Axis::X, Axis::Y, Axis::Z}) {
+            if (delta.GetAxis(forward_axis) == 0) {
+              continue;
+            }
+            for (int forward_delta = CapAbs(delta.GetAxis(forward_axis), SHORT_LEN);
+                forward_delta != 0;
+                forward_delta -= Sign(forward_delta)) {
+              LinearDelta forward{forward_axis, forward_delta};
+              if (cmd->Set(bot_id, Command::LMove(detour, forward))) {
+                //LOG(INFO) << ">>> detour LMove " << detour << " " << forward;
+                detoured = true;
+                return false;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    LOG(WARNING) << "Bot " << bot_id << " stuck: " << position << " -> " << destination;
+    CHECK(++stuck < 40) << "Aborting because stuck for long";
     return false;
   });
 }
@@ -154,8 +209,121 @@ TaskPtr MakeFissionTask() {
 }
 
 TaskPtr MakeFusionTask() {
-  //LOG(FATAL) << "NOT IMPLEMENTED";
-  return MakeCommandTask(0, Command::Wait());
+  return {};
+}
+
+TaskPtr MakeScatterToRegionsTask(std::vector<Region> regions) {
+  return MakeTask([=](Task::Commander* cmd) -> TaskPtr {
+    LOG(INFO) << "Scatter";
+    std::vector<TaskPtr> subtasks;
+    for (int index_region = 0; index_region < static_cast<int>(regions.size()); ++index_region) {
+      const Region& region = regions[index_region];
+      subtasks.emplace_back(MakeGreedyMoveTask(index_region * 2 + 0, region.mini));
+      subtasks.emplace_back(MakeGreedyMoveTask(index_region * 2 + 1, region.mini + Delta(0, 0, 1)));
+    }
+    return MakeBarrierTask(std::move(subtasks));
+  });
+}
+
+TaskPtr MakeRegionLineAssembleTask(int near_bot_id, int far_bot_id, Region region) {
+  return MakeTask([=](Task::Commander* cmd) -> TaskPtr {
+    const int resolution = TARGET.Resolution();
+    std::vector<TaskPtr> plan;
+
+    Point near_bot_pos = BOT(near_bot_id).position();
+    Point far_bot_pos = BOT(far_bot_id).position();
+    CHECK_EQ(near_bot_pos.y, far_bot_pos.y);
+
+    auto MaybeGoUp = [&](int y) {
+      if (near_bot_pos.y != y) {
+        near_bot_pos.y = y;
+        far_bot_pos.y = y;
+        plan.emplace_back(MakeGreedyMoveTask(near_bot_id, near_bot_pos));
+        plan.emplace_back(MakeGreedyMoveTask(far_bot_id, far_bot_pos));
+      }
+    };
+
+    auto DoPointFill = [&](Point destination) {
+      MaybeGoUp(destination.y);
+
+      if (destination == far_bot_pos) {
+        plan.emplace_back(MakeCommandTask(far_bot_id, Command::Fill(Delta(0, -1, 0))));
+      } else {
+        if (destination != near_bot_pos) {
+          near_bot_pos = destination;
+          plan.emplace_back(MakeGreedyMoveTask(near_bot_id, near_bot_pos));
+        }
+        CHECK_EQ(near_bot_pos, destination);
+        plan.emplace_back(MakeCommandTask(near_bot_id, Command::Fill(Delta(0, -1, 0))));
+      }
+    };
+
+    auto DoLineFill = [&](Point near_destination, Point far_destination) {
+      MaybeGoUp(near_destination.y);
+
+      std::vector<TaskPtr> subtasks;
+      if (near_bot_pos != near_destination) {
+        near_bot_pos = near_destination;
+        subtasks.emplace_back(MakeGreedyMoveTask(near_bot_id, near_bot_pos));
+      }
+      if (far_bot_pos != far_destination) {
+        far_bot_pos = far_destination;
+        subtasks.emplace_back(MakeGreedyMoveTask(far_bot_id, far_bot_pos));
+      }
+
+      if (!subtasks.empty()) {
+        plan.emplace_back(MakeBarrierTask(std::move(subtasks)));
+      }
+      plan.emplace_back(MakeBarrierTask(
+          MakeCommandTask(
+              near_bot_id,
+              Command::GFill(Delta(0, -1, 0), far_destination - near_destination)),
+          MakeCommandTask(
+              far_bot_id,
+              Command::GFill(Delta(0, -1, 0), near_destination - far_destination))));
+    };
+
+    for (int y = 1; y < resolution; ++y) {
+      for (int x = region.mini.x; x <= region.maxi.x; ++x) {
+        int near_z = region.mini.z;
+        while (near_z <= region.maxi.z) {
+          while (near_z <= region.maxi.z && !TARGET.Get(x, y - 1, near_z)) {
+            ++near_z;
+          }
+          if (near_z > region.maxi.z) {
+            continue;
+          }
+          int far_z = near_z;
+          while (far_z < region.maxi.z &&
+                 near_z - far_z + 1 < FAR_LEN &&
+                 TARGET.Get(x, y - 1, far_z + 1)) {
+            ++far_z;
+          }
+          if (near_z == far_z) {
+            DoPointFill(Point(x, y, near_z));
+          } else {
+            DoLineFill(Point(x, y, near_z), Point(x, y, far_z));
+          }
+          near_z = far_z + 1;
+        }
+      }
+    }
+    return MakeSequenceTask(std::move(plan));
+  });
+}
+
+TaskPtr MakeParallelLineAssembleTask(std::vector<Region> regions) {
+  return MakeTask([=](Task::Commander* cmd) -> TaskPtr {
+    std::vector<TaskPtr> subtasks;
+    for (int index_region = 0; index_region < static_cast<int>(regions.size()); ++index_region) {
+      const Region& region = regions[index_region];
+      subtasks.emplace_back(
+          MakeRegionLineAssembleTask(index_region * 2 + 0,
+                                     index_region * 2 + 1,
+                                     region));
+    }
+    return MakeBarrierTask(std::move(subtasks));
+  });
 }
 
 }  // namespace
@@ -166,9 +334,13 @@ TaskPtr MakeLineAssemblerTask() {
     CHECK_EQ(1, BOTS.size()) << "precondition failed";
     CHECK_EQ(Point(), BOT(0).position()) << "precondition failed";
 
+    auto regions = ComputeRegions(cmd);
+
     return MakeSequenceTask(
         MakeFissionTask(),
+        MakeScatterToRegionsTask(regions),
         MakeCommandTask(0, Command::Flip()),
+        MakeParallelLineAssembleTask(regions),
         MakeCommandTask(0, Command::Flip()),
         MakeFusionTask()/*,
         MakeCommandTask(0, Command::Halt())*/);
