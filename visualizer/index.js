@@ -102,28 +102,34 @@ function init() {
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
     var scene = generateScene(width, height, renderer);
+    var boxesTarget = Array(resolution * resolution * resolution);
     var boxesMatrix = Array(resolution * resolution * resolution);
     var boxesBots = [];
     var tick = -1;
 
-    function drawMatrixFromDiffs(diffs) {
+    function drawMatrixFromDiffs(diffs, boxes) {
         for (var j = 0; j < diffs.length; j++) {
             index = diffs[j][0];
             visual = diffs[j][1];
             color = diffs[j][2];
-            if (visual & boxesMatrix[index] == undefined) {
+            opacity = diffs[j][3];
+            if (visual & boxes[index] == undefined) {
                 coordIndex = g2c(index);
                 box = generateBox(coordIndex[0],
                                   coordIndex[1],
                                   coordIndex[2]);
-                boxesMatrix[index] = box;
+                boxes[index] = box;
                 scene.add(box);
             }
             if (visual) {
-                boxesMatrix[index].material.color.setHex(color);
+                boxes[index].material.color.setHex(color);
+                if (opacity < 1.0) {
+                    boxes[index].material.transparent = true;
+                    boxes[index].material.opacity = opacity;
+                }
             } else {
-                scene.remove(boxesMatrix[index]);
-                boxesMatrix[index] = undefined;
+                scene.remove(boxes[index]);
+                boxes[index] = undefined;
             }
         }
     }
@@ -152,11 +158,11 @@ function init() {
         console.log("changeTick", tick, "to", nextTick);
         if (tick < nextTick) {
             for (var t = tick + 1; t < nextTick; t++) {
-                drawMatrixFromDiffs(diffsForward[t]);
+                drawMatrixFromDiffs(diffsForward[t], boxesMatrix);
             }
         } else if (tick > nextTick) {
             for (var t = tick - 1; t >= nextTick; t--) {
-                drawMatrixFromDiffs(diffsBackward[t]);
+                drawMatrixFromDiffs(diffsBackward[t], boxesMatrix);
             }
         }
         disposeBoxesBots();
@@ -173,6 +179,7 @@ function init() {
         changeTick(i);
     }
 
+    drawMatrixFromDiffs(target, boxesTarget);
     changeTick(0);
     show();
 
