@@ -52,6 +52,9 @@ bool TickExecutor::Commander::Set(int bot_id, const Command& command) {
       if (!field_->matrix().IsPlaceable(nd)) {
         return false;
       }
+      if (command.type == Command::FILL) {
+        fills_.emplace_back(nd);
+      }
     } else if (command.type == Command::FISSION) {
       const Region& nd = vcs[0];
       if (!field_->matrix().IsMovable(nd)) {
@@ -75,6 +78,22 @@ TickExecutor::Commander::Commander(const FieldState* field)
     commands_[pair.first];  // Init with WAIT command.
     footprints_.push_back(Region::FromPoint(pair.second.position()));
   }
+}
+
+TickExecutor::Commander::Commander(TickExecutor::Commander&& other) {
+  *this = std::move(other);
+}
+
+TickExecutor::Commander& TickExecutor::Commander::operator=(TickExecutor::Commander&& other) {
+  field_ = other.field_;
+  commands_ = std::move(other.commands_);
+  footprints_ = std::move(other.footprints_);
+  fills_ = std::move(other.fills_);
+  gfills_ = std::move(other.gfills_);
+  gvoids_ = std::move(other.gvoids_);
+  masters_ = std::move(other.masters_);
+  slaves_ = std::move(other.slaves_);
+  return *this;
 }
 
 bool TickExecutor::Commander::Interfere(const Region& region){
@@ -240,6 +259,26 @@ const std::vector<Action> TickExecutor::Commander::GetAction() {
     actions.push_back(Action::Fusion(master_id, slaves_[regions]));
   }
   return actions;
+}
+
+std::vector<Region> TickExecutor::Commander::GetFills() const {
+  std::vector<Region> regions(fills_);
+  for (const auto& pair : gfills_) {
+    regions.emplace_back(pair.first);
+  }
+  return regions;
+}
+
+TickExecutor::Commander TickExecutor::Commander::Copy() const {
+  Commander copy(field_);
+  copy.commands_ = commands_;
+  copy.footprints_ = footprints_;
+  copy.fills_ = fills_;
+  copy.gfills_ = gfills_;
+  copy.gvoids_ = gvoids_;
+  copy.masters_ = masters_;
+  copy.slaves_ = slaves_;
+  return copy;
 }
 
 void TickExecutor::Run(FieldState* field, TraceWriter* writer) {

@@ -7,6 +7,7 @@
 #include "glog/logging.h"
 #include "gflags/gflags.h"
 
+#include "solver/support/union_find.h"
 #include "solver/tasks/command.h"
 
 #define FIELD (*cmd->field())
@@ -15,7 +16,6 @@
 #define BOTS (FIELD.bots())
 #define BOT(bot_id) (BOTS.find(bot_id)->second)
 
-DEFINE_bool(line_assembler_noflip, false, "Disable Flip");
 DEFINE_int32(line_assembler_x_divs, 5, "X division");
 DEFINE_int32(line_assembler_z_divs, 4, "Z division");
 
@@ -417,6 +417,102 @@ TaskPtr MakeParallelLineAssembleTask(std::vector<Region> regions) {
   });
 }
 
+class LazyFlipMiddlewareTask : public Task {
+ public:
+  LazyFlipMiddlewareTask(TaskPtr task)
+      : task_(std::move(task)), GROUND(-999, -999, -999) {
+    union_find_.Add(GROUND);
+  }
+  LazyFlipMiddlewareTask(const LazyFlipMiddlewareTask& other) = delete;
+
+  bool Decide(Commander* cmd) override {
+    if (!holdback_commands_.empty()) {
+      for (const auto& pair : holdback_commands_) {
+        bool success = cmd->Set(pair.first, pair.second);
+        CHECK(success);
+      }
+      holdback_commands_.clear();
+      return holdback_done_;
+    }
+
+    const int any_bot_id = BOTS.begin()->first;
+
+    if (done_deferred_) {
+      CHECK(harmonic_);
+      bool success = cmd->Set(any_bot_id, Command::Flip());
+      CHECK(success);
+      return true;
+    }
+
+    if (harmonic_ && IsGrounded()) {
+      bool success = cmd->Set(any_bot_id, Command::Flip());
+      CHECK(success);
+      harmonic_ = false;
+      return false;
+    }
+
+    Commander copy_cmd = cmd->Copy();
+    bool done = task_->Decide(&copy_cmd);
+
+    UpdateUnionFind(copy_cmd.GetFills());
+
+    if (!harmonic_ && !IsGrounded()) {
+      holdback_commands_ = copy_cmd.commands();
+      holdback_done_ = done;
+      bool success = cmd->Set(any_bot_id, Command::Flip());
+      CHECK(success);
+      harmonic_ = true;
+      return false;
+    }
+
+    std::swap(*cmd, copy_cmd);
+    if (done && harmonic_) {
+      done_deferred_ = true;
+      return false;
+    }
+    return done;
+  }
+
+ private:
+  bool IsGrounded() const {
+    return union_find_.CountRoots() == 1;
+  }
+
+  void UpdateUnionFind(const std::vector<Region>& fills) {
+    for (const auto& fill : fills) {
+      for (int x = fill.mini.x; x <= fill.maxi.x; ++x) {
+        for (int y = fill.mini.y; y <= fill.maxi.y; ++y) {
+          for (int z = fill.mini.z; z <= fill.maxi.z; ++z) {
+            const Point p(x, y, z);
+            union_find_.Add(p);
+            union_find_.Connect(p, Point(x - 1, y, z));
+            union_find_.Connect(p, Point(x + 1, y, z));
+            union_find_.Connect(p, Point(x, y - 1, z));
+            union_find_.Connect(p, Point(x, y + 1, z));
+            union_find_.Connect(p, Point(x, y, z - 1));
+            union_find_.Connect(p, Point(x, y, z + 1));
+            if (y == 0) {
+              union_find_.Connect(p, GROUND);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const TaskPtr task_;
+  const Point GROUND;
+  UnionFind union_find_;
+  bool harmonic_ = false;
+  std::map<int, Command> holdback_commands_;
+  bool holdback_done_;
+  bool done_deferred_ = false;
+};
+
+TaskPtr MakeLazyFlipMiddlewareTask(TaskPtr task) {
+  return MakeTask(new LazyFlipMiddlewareTask(std::move(task)));
+}
+
 }  // namespace
 
 TaskPtr MakeLineAssemblerTask() {
@@ -430,9 +526,7 @@ TaskPtr MakeLineAssemblerTask() {
     return MakeSequenceTask(
         MakeFissionTask(),
         MakeScatterToRegionsTask(regions),
-        FLAGS_line_assembler_noflip ? nullptr : MakeCommandTask(0, Command::Flip()),
-        MakeParallelLineAssembleTask(regions),
-        FLAGS_line_assembler_noflip ? nullptr : MakeCommandTask(0, Command::Flip()),
+        MakeLazyFlipMiddlewareTask(MakeParallelLineAssembleTask(regions)),
         MakeFinishTask(),
         MakeCommandTask(0, Command::Halt()));
   });
