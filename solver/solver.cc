@@ -33,6 +33,7 @@ DEFINE_string(output, "", "Path to output trace file");
 DEFINE_string(impl, "", "Solver implementation name");
 DEFINE_string(disasm, "", "Disassembler name used in ReassembleNaive");
 DEFINE_string(asm, "", "Disassembler name used in ReassembleNaive");
+DEFINE_bool(nohalt, false, "Do not output halt");
 
 std::unique_ptr<Solver> CreateSolver(
     const std::string& name, const Matrix* source, const Matrix* target, TraceWriter* writer) {
@@ -43,7 +44,7 @@ std::unique_ptr<Solver> CreateSolver(
     return std::unique_ptr<Solver>(new BBGvoidSolver(source, target, writer));
   }
   if (name == "bbgvoid_task") {
-    return std::unique_ptr<Solver>(new BBGvoidTaskSolver(source, target, writer));
+    return std::unique_ptr<Solver>(new BBGvoidTaskSolver(source, target, writer, !FLAGS_nohalt));
   }
   if (name == "fission_naive") {
     return std::unique_ptr<Solver>(new FissionNaiveSolver(source, target, writer));
@@ -61,10 +62,10 @@ std::unique_ptr<Solver> CreateSolver(
     return std::unique_ptr<Solver>(new TaskExecutorExampleSolver(source, target, writer));
   }
   if (name == "delete") {
-    return std::unique_ptr<Solver>(new DeleteStrategySolver(source, target, writer));
+    return std::unique_ptr<Solver>(new DeleteStrategySolver(source, target, writer, !FLAGS_nohalt));
   }
   if (name == "delete3") {
-    return std::unique_ptr<Solver>(new DeleteStrategySolver3(source, target, writer));
+    return std::unique_ptr<Solver>(new DeleteStrategySolver3(source, target, writer, !FLAGS_nohalt));
   }
   if (name == "fa015") {
     return std::unique_ptr<Solver>(new FASolver(source, target, writer, false, 15));
