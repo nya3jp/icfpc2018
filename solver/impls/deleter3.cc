@@ -26,8 +26,8 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
     }
   }
 
-  auto x_size = (end_x_ - start_x_) / 29 + 2;
-  auto y_size = std::min(40 / x_size, height_ / 29 + 2);
+  auto x_size = (end_x_ - start_x_ - 1) / 29 + 2;
+  auto y_size = std::min(40 / x_size, (height_ - 1) / 29 + 2);
 
 //  std::cout << "X: " <<  x_size << " Y: " << y_size << std::endl;
 //  std::cout << "x: " <<  start_x_ << " - " << end_x_ << std::endl;
@@ -75,6 +75,11 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
         }
       }
     }
+//    std::cout << "A ";
+//    for (const auto &bot: bots) {
+//      std::cout << bot.second.position().x << " ";
+//    }
+//    std::cout << std::endl;
     // x方向、最後の一個
     for (const auto &bot : bots) {
       if (bot.second.position().x % 29 != start_x_ % 29 &&
@@ -84,6 +89,11 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
         return;
       }
     }
+//    std::cout << "B ";
+//    for (const auto &bot: bots) {
+//      std::cout << bot.second.position().x << " ";
+//    }
+//    std::cout << std::endl;
 
     // y方向に展開
     if (bots.size() < x_size * y_size) {
@@ -257,8 +267,8 @@ void DeleterStrategy3::Decide(TickExecutor::Commander *commander) {
         } else {
           commander->Set(bot.second.id(), Command::GVoid(nd, Delta(x_diff, y_diff, 0)));
         }
-        std::cout << bot.second.position() + nd << " "
-                  << bot.second.position() + nd + Delta(x_diff, y_diff, 0) << std::endl;
+//        std::cout << bot.second.position() + nd << " "
+//                  << bot.second.position() + nd + Delta(x_diff, y_diff, 0) << std::endl;
       }
     } else {
       // dz_に進む
@@ -426,7 +436,7 @@ DeleteStrategySolver3::DeleteStrategySolver3(
 void DeleteStrategySolver3::Solve() {
   DeleterStrategy3 strategy(model_, halt_);
   TickExecutor executor(&strategy);
-  while (!field_.IsHalted()) {
+  while (!strategy.Finished()) {
     executor.Run(&field_, writer_);
   }
 }

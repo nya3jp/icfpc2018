@@ -24,6 +24,7 @@ class DeleterStrategy3 : public TickExecutor::Strategy {
     FUSION,
     RETURN,
   };
+  bool Finished() { return finished_; }
 
  private:
   const Matrix *const model_;
