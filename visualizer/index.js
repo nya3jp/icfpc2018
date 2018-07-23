@@ -102,44 +102,66 @@ function init() {
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
     var scene = generateScene(width, height, renderer);
-    var boxes = Array(resolution * resolution * resolution);
-    console.log(scene);
+    var boxesMatrix = Array(resolution * resolution * resolution);
+    var boxesBots = [];
     var tick = -1;
 
-    function drawTick(diffs) {
+    function drawMatrixFromDiffs(diffs) {
         for (var j = 0; j < diffs.length; j++) {
             index = diffs[j][0];
             visual = diffs[j][1];
             color = diffs[j][2];
-            if (visual & boxes[index] == undefined) {
-                coord_index = g2c(index);
-                box = generateBox(coord_index[0],
-                                  coord_index[1],
-                                  coord_index[2]);
-                boxes[index] = box;
+            if (visual & boxesMatrix[index] == undefined) {
+                coordIndex = g2c(index);
+                box = generateBox(coordIndex[0],
+                                  coordIndex[1],
+                                  coordIndex[2]);
+                boxesMatrix[index] = box;
                 scene.add(box);
             }
             if (visual) {
-                boxes[index].material.color.setHex(color);
+                boxesMatrix[index].material.color.setHex(color);
             } else {
-                scene.remove(boxes[index]);
-                boxes[index] = undefined;
+                scene.remove(boxesMatrix[index]);
+                boxesMatrix[index] = undefined;
             }
         }
     }
 
-    function changeTick(next_tick) {
-        console.log("changeTick", tick, "to", next_tick);
-        if (tick < next_tick) {
-            for (var t = tick + 1; t < next_tick; t++) {
-                drawTick(diffsForward[t]);
+    function disposeBoxesBots() {
+        for (var i = 0; i < boxesBots.length; i++) {
+            scene.remove(boxesBots[i]);
+            boxesBots[i] = undefined;
+        }
+    }
+
+    function drawBots(bots) {
+        for (var i = 0; i < bots.length; i++) {
+            coordIndex = bots[i][0];
+            color = bots[i][1];
+            box = generateBox(coordIndex[0],
+                              coordIndex[1],
+                              coordIndex[2]);
+            boxesBots.push(box);
+            box.material.color.setHex(color);
+            scene.add(box);
+        }
+    }
+
+    function changeTick(nextTick) {
+        console.log("changeTick", tick, "to", nextTick);
+        if (tick < nextTick) {
+            for (var t = tick + 1; t < nextTick; t++) {
+                drawMatrixFromDiffs(diffsForward[t]);
             }
-        } else if (tick > next_tick) {
-            for (var t = tick - 1; t >= next_tick; t--) {
-                drawTick(diffsBackward[t]);
+        } else if (tick > nextTick) {
+            for (var t = tick - 1; t >= nextTick; t--) {
+                drawMatrixFromDiffs(diffsBackward[t]);
             }
         }
-        tick = next_tick;
+        disposeBoxesBots();
+        drawBots(botStates[nextTick]);
+        tick = nextTick;
     }
 
     var slider = document.getElementById("slider");

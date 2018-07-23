@@ -49,7 +49,7 @@ class Matrix {
 
   Matrix Copy() const;
 
-  std::string ToJSON();
+  std::string ToJSON() const;
 
  private:
   int resolution_;

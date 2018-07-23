@@ -36,6 +36,8 @@ class BotState {
   void set_seeds(uint64_t seeds) { seeds_ = seeds; }
   void set_position(const Point& position) { position_ = position; }
 
+  std::string ToJSON() const;
+
  private:
   int id_;
   uint64_t seeds_;
@@ -82,7 +84,7 @@ class FieldState {
   bool IsHarmonicsLow() const { return harmonics_ == Harmonics::LOW; }
   void FlipHarmonics() { harmonics_ = harmonics_ == Harmonics::LOW ? Harmonics::HIGH : Harmonics::LOW; }
 
-  std::string ToJSON() { return matrix_.ToJSON(); }
+  std::string ToJSON() const;
 
  private:
   uint64_t energy_;

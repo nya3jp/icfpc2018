@@ -124,9 +124,10 @@ class Simulator {
 };
 
 void Simulator::LogTick(int tick) {
-    log_file_ << "  {" << std::endl;
-    log_file_ << "    \"field\": " << field_.ToJSON() << std::endl;
-    log_file_ << "  }";
+    log_file_ << "    {" << std::endl;
+    log_file_ << "      \"tick\":" << tick << "," << std::endl;
+    log_file_ << "      \"field\":" << field_.ToJSON() << std::endl;
+    log_file_ << "    }";
 }
 
 void Simulator::Exec() {
@@ -134,7 +135,9 @@ void Simulator::Exec() {
   int tick = 0;
   if (log_) {
     log_file_ = std::ofstream("simlog.json");
-    log_file_ << "[" << std::endl;
+    log_file_ << "{" << std::endl;
+    log_file_ << "  \"target\":" << field_.target().ToJSON() << "," << std::endl;
+    log_file_ << "  \"states\":[" << std::endl;
     LogTick(tick);
   }
   while (!field_.IsHalted()) {
@@ -149,7 +152,9 @@ void Simulator::Exec() {
   CHECK(field_.matrix() == field_.target());
   std::cout << tick << " " << field_.energy() << std::endl;
   if (log_) {
-    log_file_ << "]" << std::endl;
+    log_file_ << std::endl;
+    log_file_ << "  ]" << std::endl;
+    log_file_ << "}" << std::endl;
     log_file_.close();
   }
 }

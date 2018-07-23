@@ -6,7 +6,7 @@ import numpy as np
 
 def read_matrix(num_voxels, log_step):
     matrix = np.zeros(num_voxels, dtype=np.int8)
-    matrix_log = log_step['field']
+    matrix_log = log_step['field']['matrix']
     n = len(matrix_log)
     assert n % 2 == 0
     index = 0
@@ -37,7 +37,7 @@ def main():
     out_path = sys.argv[2]
     with open(log_path) as fp:
         log = json.load(fp)
-    num_voxels = sum(log[0]['field'][1::2])
+    num_voxels = sum(log['states'][0]['field']['matrix'][1::2])
     resolution = int(num_voxels ** (1.0 / 3.0) + 0.5)
     assert num_voxels == resolution ** 3
 
@@ -47,7 +47,7 @@ def main():
         def write_diff(matrix_before, matrix_after):
             diff = matrix_after - matrix_before
             diff_json = json.dumps(diff_to_json(diff))
-            if tick < len(log) - 1:
+            if tick < len(log['states']) - 1:
                 sep = ','
             else:
                 sep = ''
@@ -55,7 +55,7 @@ def main():
 
         print('diffsForward = [', file=fp)
         matrix_last = np.zeros(num_voxels, dtype=np.int8)
-        for tick, log_tick in enumerate(log):
+        for tick, log_tick in enumerate(log['states']):
             matrix = read_matrix(num_voxels, log_tick)
             write_diff(matrix_last, matrix)
             matrix_last = matrix
@@ -65,12 +65,26 @@ def main():
         # `diffsBackward` has 3 elements describing
         # diff from 1 to 0, 2 to 1 and 3 to 2.
         print('diffsBackward = [', file=fp)
-        matrix_last = read_matrix(num_voxels, log[0])
-        for tick, log_tick in enumerate(log[1:]):
+        matrix_last = read_matrix(num_voxels, log['states'][0])
+        for tick, log_tick in enumerate(log['states'][1:]):
             matrix = read_matrix(num_voxels, log_tick)
             write_diff(matrix, matrix_last)
             matrix_last = matrix
         print('\n]', file=fp)
+
+        print('botStates = [', file=fp)
+        for tick, log_tick in enumerate(log['states']):
+            bots_str = '  ['
+            for i, bot in enumerate(log_tick['field']['bots']):
+                pos = bot['bot_state']['position']
+                bots_str += '[[{:d}, {:d}, {:d}], {:d}]'.format(*pos, 0xff0000)
+                if i < len(log_tick['field']['bots']) - 1:
+                    bots_str += ','
+            bots_str += ']'
+            if tick < len(log['states']) - 1:
+                bots_str += ','
+            print(bots_str, file=fp)
+        print(']', file=fp)
 
 
 if __name__ == '__main__':

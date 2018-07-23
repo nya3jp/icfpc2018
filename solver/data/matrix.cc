@@ -68,7 +68,7 @@ Matrix Matrix::Copy() const {
   return Matrix(resolution_, data_);
 }
 
-std::string Matrix::ToJSON() {
+std::string Matrix::ToJSON() const {
   std::string s = "[";
   std::string sep = ",";
   int last = data_[0];
