@@ -12,20 +12,23 @@
 #include "solver/impls/base.h"
 #include "solver/impls/bbgvoid.h"
 #include "solver/impls/bbgvoid_task.h"
+#include "solver/impls/deleter.h"
 #include "solver/impls/fission_naive.h"
 #include "solver/impls/generic_task.h"
 #include "solver/impls/naive.h"
+#include "solver/impls/reassemble_naive.h"
 #include "solver/impls/task_executor_example.h"
 #include "solver/impls/tick_executor_example.h"
 #include "solver/io/model_reader.h"
 #include "solver/io/trace_writer_impl.h"
 #include "solver/tasks/line_assembler.h"
-#include "solver/impls/deleter.h"
 
 DEFINE_string(source, "", "Path to source model file");
 DEFINE_string(target, "", "Path to target model file");
 DEFINE_string(output, "", "Path to output trace file");
 DEFINE_string(impl, "", "Solver implementation name");
+DEFINE_string(disasm, "", "Disassembler name used in ReassembleNaive");
+DEFINE_string(asm, "", "Disassembler name used in ReassembleNaive");
 
 std::unique_ptr<Solver> CreateSolver(
     const std::string& name, const Matrix* source, const Matrix* target, TraceWriter* writer) {
@@ -52,6 +55,9 @@ std::unique_ptr<Solver> CreateSolver(
   }
   if (name == "delete") {
     return std::unique_ptr<Solver>(new DeleteStrategySolver(source, target, writer));
+  }
+  if (name == "reassemble_naive") {
+    return std::unique_ptr<Solver>(new ReassembleNaiveSolver(source, target, writer, FLAGS_disasm, FLAGS_asm));
   }
   LOG(FATAL) << "No solver impl found. Set --impl correctly.";
   return nullptr;
@@ -82,6 +88,8 @@ int main(int argc, char** argv) {
   if (target.IsZeroSized()) {
     target = Matrix::FromResolution(source.Resolution());
   }
+
+  CHECK_EQ(source.Resolution(), target.Resolution());
 
   std::ofstream fout(FLAGS_output.c_str());
   fout << std::unitbuf;

@@ -1,5 +1,7 @@
 #include "solver/impls/deleter.h"
 
+#include "glog/logging.h"
+
 void DeleterStrategy::Decide(TickExecutor::Commander *commander) {
 
   const Matrix &matrix = commander->field()->matrix();
@@ -230,24 +232,32 @@ void DeleterStrategy::Decide(TickExecutor::Commander *commander) {
       }
     }
     // 終わり
-    for (const auto &bot : bots) {
-      commander->Set(bot.second.id(), Command::Halt());
+    if (halt_) {
+      for (const auto &bot : bots) {
+        commander->Set(bot.second.id(), Command::Halt());
+      }
     }
+    // FIXME: とりあえず初期位置のbotのIDが0でないといけないassemblerがいるのでチェックする
+    else {
+      CHECK(bots.size() == 1 && bots.cbegin()->first == 0);
+    }
+    finished_ = true;
     return;
   }
 }
 
 DeleteStrategySolver::DeleteStrategySolver(
-    const Matrix *source, const Matrix *target, TraceWriter *writer)
+    const Matrix *source, const Matrix *target, TraceWriter *writer, bool halt)
     : field_(FieldState::FromModels(source->Copy(), target->Copy())),
+      model_(source),
       writer_(writer),
-      model_(source) {
+      halt_(halt) {
 }
 
 void DeleteStrategySolver::Solve() {
-  DeleterStrategy strategy(model_);
+  DeleterStrategy strategy(model_, halt_);
   TickExecutor executor(&strategy);
-  while (!field_.IsHalted()) {
+  while (!strategy.Finished()) {
     executor.Run(&field_, writer_);
   }
 }

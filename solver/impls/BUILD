@@ -120,3 +120,21 @@ cc_library(
         "@com_github_google_glog//:glog",
     ],
 )
+
+cc_library(
+    name = "reassemble_naive",
+    srcs = ["reassemble_naive.cc"],
+    hdrs = ["reassemble_naive.h"],
+    deps = [
+        ":base",
+        ":bbgvoid_task",
+        ":delete_strategy",
+        ":fission_naive",
+        ":generic_task",
+        ":naive",
+        "//solver/data:matrix",
+        "//solver/io:trace_writer",
+        "//solver/tasks:line_assembler",
+        "@com_github_google_glog//:glog",
+    ],
+)

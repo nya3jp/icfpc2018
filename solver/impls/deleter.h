@@ -9,8 +9,8 @@
 
 class DeleterStrategy : public TickExecutor::Strategy {
  public:
-  DeleterStrategy(const Matrix *source)
-      : model_(source), area_(0), height_(-1), state_(State::FISSION) {
+  DeleterStrategy(const Matrix *source, bool halt)
+      : model_(source), state_(State::FISSION), area_(0), height_(-1), finished_(false), halt_(halt) {
   }
 //  DeleterStrategy(const DeleterStrategy &other) = delete;
 
@@ -23,25 +23,29 @@ class DeleterStrategy : public TickExecutor::Strategy {
     FUSION,
     RETURN,
   };
+  bool Finished() { return finished_; }
 
  private:
   const Matrix *const model_;
   State state_;
   int area_;
   int height_;
+  bool finished_;
+  bool halt_;
 };
 
 class DeleteStrategySolver : public Solver {
  public:
-  DeleteStrategySolver(const Matrix* source, const Matrix* target, TraceWriter* writer);
+  DeleteStrategySolver(const Matrix* source, const Matrix* target, TraceWriter* writer, bool halt = true);
 //  DeleteStrategySolver(const DeleteStrategySolver& other) = delete;
 
   void Solve() override;
 
  private:
-  const Matrix *const model_;
   FieldState field_;
+  const Matrix *const model_;
   TraceWriter* writer_;
+  bool halt_;
 };
 
 #endif //ICFPC2018_DELETER_H
