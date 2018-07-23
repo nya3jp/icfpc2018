@@ -92,7 +92,7 @@ TaskPtr MakeFissionTask(Region& bb_) {
               (bot.position().x != bb_.mini.x - 1 ? 1 : 0);
       bot_ids[i] = bot_id;
     }
-    bool done = bots.size() == 8;
+    bool done = bots.size() == (1 << bb_.Dimension());
     for (int i = 0; i < 8; ++i) {
       int bot_id = bot_ids[i];
       if (bot_id < 0) continue;
@@ -111,13 +111,13 @@ TaskPtr MakeFissionTask(Region& bb_) {
           done = false;
         }
       } else {
-        if (i < 1 && bot_ids[i + 1] < 0) {
+        if (i < 1 && bb_.maxi.x > bb_.mini.x && bot_ids[i + 1] < 0) {
           bool success = commander->Set(bot_id, Command::Fission(Delta(1, 0, 0), 3));
           CHECK(success);
-        } else if (i < 2 && bot_ids[i + 2] < 0) {
+        } else if (i < 2 && bb_.maxi.z > bb_.mini.z && bot_ids[i + 2] < 0) {
           bool success = commander->Set(bot_id, Command::Fission(Delta(0, 0, 1), 1));
           CHECK(success);
-        } else if (i < 4 && bot_ids[i + 4] < 0) {
+        } else if (i < 4 && bb_.maxi.y > bb_.mini.y && bot_ids[i + 4] < 0) {
           bool success = commander->Set(bot_id, Command::Fission(Delta(0, 1, 0), 0));
           CHECK(success);
         }
@@ -296,7 +296,6 @@ Region BBGvoidTaskSolver::CalculateBB() {
   }
   // optimization: cut master's moving cost (ticks)
   min_x = 1, min_y = 0, min_z = 1;
-  CHECK(max_x != min_x && max_y != min_y && max_z != min_z) << "too thin, cannot solve by BBGvoid";
   CHECK(max_x - min_x <= FAR_LEN && max_y - min_y <= FAR_LEN && max_z - min_z <= FAR_LEN) << "too large, cannot solve by BBGvoid";
   return Region(Point(min_x, min_y, min_z), Point(max_x, max_y, max_z));
 }
