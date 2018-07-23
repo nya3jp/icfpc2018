@@ -52,7 +52,7 @@ def main(argv):
 
     taskname = 'F{}{:03d}'.format(kind, model_id)
 
-    # subprocess.check_call(['bazel', 'build', '//cxx_simulator:sim'], stderr=subprocess.DEVNULL)
+    subprocess.check_call(['bazel', 'build', '//cxx_simulator:sim'], stderr=subprocess.DEVNULL)
 
     src_model_path = os.path.join(ROOT_DIR, 'data', 'models', taskname + '_src.mdl.gz') if src else None
     tgt_model_path = os.path.join(ROOT_DIR, 'data', 'models', taskname + '_tgt.mdl.gz') if tgt else None
