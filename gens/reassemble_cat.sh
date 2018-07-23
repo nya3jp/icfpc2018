@@ -6,7 +6,7 @@ bazel build ...
 
 # 14-11: 7
 ./bazel-bin/solver/solver \
-  --source problemsF/FD014_src.mdl \
+  --source data/models/FD014_src.mdl \
   --output a.nbt \
   --impl bbgvoid_task \
   --nohalt
@@ -16,7 +16,7 @@ cat handasm/FA011.nbt >>a.nbt
 
 # 11-12: 4
 ./bazel-bin/solver/solver \
-  --source problemsF/FD011_src.mdl \
+  --source data/models/FD011_src.mdl \
   --output a.nbt \
   --impl bbgvoid_task \
   --nohalt
@@ -26,7 +26,7 @@ gunzip -dc data/traces/FA012.nbt.gz >>a.nbt
 
 # 12-13: 5
 ./bazel-bin/solver/solver \
-  --source problemsF/FD012_src.mdl \
+  --source data/models/FD012_src.mdl \
   --output a.nbt \
   --impl bbgvoid_task \
   --nohalt
@@ -36,7 +36,7 @@ gunzip -dc data/traces/FA013.nbt.gz >>a.nbt
 
 # 18-15: 11
 ./bazel-bin/solver/solver \
-  --source problemsF/FD018_src.mdl \
+  --source data/models/FD018_src.mdl \
   --output a.nbt \
   --impl bbgvoid_task \
   --nohalt

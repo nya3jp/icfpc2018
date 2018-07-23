@@ -7,8 +7,8 @@ bazel build ...
 for n in `seq -f "%03g" 1 34`; do
   for z in 1 2; do
     ./bazel-bin/solver/solver \
-      --source problemsF/FR${n}_src.mdl \
-      --target problemsF/FR${n}_tgt.mdl \
+      --source data/models/FR${n}_src.mdl \
+      --target data/models/FR${n}_tgt.mdl \
       --output a.nbt \
       --line_assembler_flip_xz \
       --line_assembler_x_divs 1 \
