@@ -6,8 +6,8 @@ bazel build ...
 
 for i in $(seq -f %03g 1 186); do
   bazel-bin/solver/solver \
-      --line_assembler_x_divs 10 \
-      --line_assembler_z_divs 2 \
+      --line_assembler_x_divs 20 \
+      --line_assembler_z_divs 1 \
       --impl line_assembler \
       --target data/models/FA${i}_tgt.mdl \
       --output a.nbt
