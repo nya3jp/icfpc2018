@@ -3,6 +3,8 @@ Team Line Graph
 
 This repository contains source codes for ICFP Programming Contest 2018.
 
+[Team Dashboard](http://gs.nya3.jp/icfpc2018/dashboard.html)
+
 
 Members
 -------
