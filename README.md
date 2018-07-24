@@ -54,7 +54,20 @@ Reassembler (for FR* models)
 bazel-bin/solver/solver --impl reassemble_naive --disasm delete3 --asm line_assembler --source path/to/FR000_src.mdl --target path/to/FR000_tgt.mdl --output out.nbt
 ```
 
-Visualizer
-----------
+Index
+-----
 
-See `visualizer/README.md`.
+- [Simulator in C++](cxx_simulator/sim.cc)
+- [Solver in C++](solver)
+    - [Entry point](solver/solver.cc)
+    - [Solver implementations](solver/impls)
+    - [Solver framework ("Tasks")](solver/support/task.h)
+    - [Assembler: "Line assembler"](solver/tasks/line_assembler.cc)
+    - [Deassembler: "Deleter"](solver/impls/deleter3.cc)
+    - [Reassembler: "Naive reassembler"](solver/impls/reassemble_naive.cc)
+- [Solver in Python for day 1](solution)
+- [Visualizer](visualizer)
+- [Reference simulator local runner with Node.js](reference_simulator/main.js)
+- [Hand-assembled solution in Python](handasm)
+- [Hand-assembled solution in C++](solver/manuals)
+- [Model/Trace database](data)
