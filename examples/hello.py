@@ -2,7 +2,7 @@ import sys
 
 
 def main(argv):
-    del argv  # unused
+    #del argv  # unused
     print('Hello, world!')
 
 
